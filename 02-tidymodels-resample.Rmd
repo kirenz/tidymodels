@@ -1,15 +1,33 @@
 # (PART) RESAMPLING {-} 
 
-# Validation set
 
-*The following content is adapted from the excellent book “Hands-on machine learning with scikit-learn, keras and tensorflow” from @Geron2019 and Alisson Hill's excellent [tidymodels workshop](https://alison.rbind.io/tags/tidymodels/).* 
+## Validation set
 
-In this chapter, you learn how to build a validation set to evaluate two simple linear regression models with different predictors. 
+Let's build a validation set to evaluate two simple linear regression models with different predictors. 
+
+First of all, we build a set of 5 validation folds with the function `vfold_cv` (we also use stratified sampling in this example):
+
+```{r}
+
+set.seed(100)
+
+cv_folds <-
+ vfold_cv(new_train, 
+          v = 5, 
+          strata = median_income,
+          breaks = 5) 
+
+cv_folds
+
+```
 
 
-# Data understanding
 
-## Import data
+
+
+
+
+
 
 ```{r}
 library(tidyverse)
