@@ -1,0 +1,31 @@
+--- 
+knit: "bookdown::render_book"
+title: "Introduction to Tidymodels"
+author: "Jan Kirenz"
+date: "`r Sys.Date()`"
+github-repo: kirenz/tidymodels
+site: bookdown::bookdown_site
+documentclass: book
+description: "The course Data Science Basics contains materials to learn data acquisition and wrangling, exploratory data analysis, data visualization, inference, modelling, and effective communication of results using the programming language R."
+bibliography: [book.bib, packages.bib]
+biblio-style: apalike
+link-citations: yes
+---
+
+
+# Welcome {.unnumbered}
+
+This course contains materials to learn data acquisition and wrangling, exploratory data analysis, data visualization, inference, modelling, and effective communication of results using the programming language R.
+
+The goal of this course is to enable students to work on a fully reproducible data science project analysing a dataset of their choice and answering questions they care about.
+
+## License {.unnumbered}
+
+<a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/"><img src="https://licensebuttons.net/l/by-sa/4.0/88x31.png" alt="Creative Commons License" style="border-width:0"/></a><br />This online work is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 Internationale</a>.
+Visit [here](https://github.com/rstudio-education/datascience-box/blob/master/LICENSE.md) for more information about the license.
+
+## Acknowledements {.unnumbered}
+
+This introductory data science course is based on Mine Çetinkaya-Rundel's excellent ["Data Science in a Box"](https://datasciencebox.org) materials.
+
+The website is built with [bookdown](https://bookdown.org/).

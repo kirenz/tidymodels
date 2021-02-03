@@ -1,0 +1,59 @@
+  |                                                                              |                                                                      |   0%  |                                                                              |.....                                                                 |   8%
+   inline R code fragments
+
+  |                                                                              |...........                                                           |  15%
+label: unnamed-chunk-1 (with options) 
+List of 2
+ $ include: logi FALSE
+ $ cache  : logi FALSE
+
+  |                                                                              |................                                                      |  23%
+  ordinary text without R code
+
+  |                                                                              |......................                                                |  31%
+label: unnamed-chunk-2 (with options) 
+List of 2
+ $ include: logi FALSE
+ $ cache  : logi FALSE
+
+  |                                                                              |...........................                                           |  38%
+  ordinary text without R code
+
+  |                                                                              |................................                                      |  46%
+label: unnamed-chunk-3 (with options) 
+List of 2
+ $ include: logi FALSE
+ $ cache  : logi FALSE
+
+  |                                                                              |......................................                                |  54%
+  ordinary text without R code
+
+  |                                                                              |...........................................                           |  62%
+label: unnamed-chunk-4 (with options) 
+List of 2
+ $ include: logi FALSE
+ $ cache  : logi FALSE
+
+  |                                                                              |................................................                      |  69%
+  ordinary text without R code
+
+  |                                                                              |......................................................                |  77%
+label: unnamed-chunk-5 (with options) 
+List of 2
+ $ include: logi FALSE
+ $ cache  : logi FALSE
+
+  |                                                                              |...........................................................           |  85%
+  ordinary text without R code
+
+  |                                                                              |.................................................................     |  92%
+label: unnamed-chunk-6 (with options) 
+List of 2
+ $ include: logi FALSE
+ $ cache  : logi FALSE
+
+  |                                                                              |......................................................................| 100%
+  ordinary text without R code
+
+
+/Applications/RStudio.app/Contents/MacOS/pandoc/pandoc +RTS -K512m -RTS Data-Science.utf8.md --to latex --from markdown+autolink_bare_uris+tex_math_single_backslash --output Data-Science.tex --lua-filter /Library/Frameworks/R.framework/Versions/4.0/Resources/library/bookdown/rmarkdown/lua/custom-environment.lua --lua-filter /Library/Frameworks/R.framework/Versions/4.0/Resources/library/rmarkdown/rmarkdown/lua/pagebreak.lua --lua-filter /Library/Frameworks/R.framework/Versions/4.0/Resources/library/rmarkdown/rmarkdown/lua/latex-div.lua --metadata-file /var/folders/9c/_3s5jt3n60j__flsgl0t72340000gn/T//RtmpUYDlnj/file9db4aff4483 --self-contained --table-of-contents --toc-depth 2 --number-sections --highlight-style tango --pdf-engine xelatex --variable graphics --wrap preserve --variable tables=yes --standalone -Mhas-frontmatter=false --citeproc 

@@ -1,0 +1,170 @@
+# (PART) RESAMPLING {-} 
+
+# Validation set
+
+*The following content is adapted from the excellent book “Hands-on machine learning with scikit-learn, keras and tensorflow” from @Geron2019 and Alisson Hill's excellent [tidymodels workshop](https://alison.rbind.io/tags/tidymodels/).* 
+
+In this chapter, you learn how to build a validation set to evaluate two simple linear regression models with different predictors. 
+
+
+# Data understanding
+
+## Import data
+
+```{r}
+library(tidyverse)
+
+LINK <- "https://raw.githubusercontent.com/kirenz/datasets/master/housing.csv"
+housing_df <- read_csv(LINK)
+
+```
+
+
+## Data splitting
+
+
+```{r}
+library(tidymodels)
+
+set.seed(100)
+
+new_split <- initial_split(housing_df, 
+                           prop = 3/4, 
+                           strata = median_income, 
+                           breaks = 5)
+
+new_train <- training(new_split) 
+new_test <- testing(new_split)
+
+```
+
+## Validation set
+
+Let's build a validation set to evaluate two simple linear regression models with different predictors. 
+
+First of all, we build a set of 5 validation folds with the function `vfold_cv` (we also use stratified sampling in this example):
+
+```{r}
+
+set.seed(100)
+
+cv_folds <-
+ vfold_cv(new_train, 
+          v = 5, 
+          strata = median_income,
+          breaks = 5) 
+
+cv_folds
+
+```
+
+
+# Model building
+
+## Model specification
+
+```{r}
+
+lm_spec <- 
+  linear_reg() %>% 
+  set_engine("lm") %>% 
+  set_mode(mode = "regression")
+
+```
+
+
+## Evaluate models  
+
+We can use the set of resamples to estimate the performance of our two simple models using the `fit_resamples()` function to fit the models on each of the 5 folds and store the results as `lm_1_res` and `lm_2_res` respectively.
+
+`fit_resamples()` will fit our model to each resample and evaluate on the heldout set from each resample. The function is only used for computing performance metrics across some set of resamples to evaluate our models - the models are not stored. 
+
+## Fit model 1
+
+```{r}
+
+lm_1_res <-
+  lm_spec %>% 
+  fit_resamples(
+    median_house_value ~ median_income, 
+    resamples = cv_folds
+    )
+
+```
+
+## Fit model 2
+
+```{r}
+
+lm_2_res <-
+  lm_spec %>% 
+  fit_resamples(
+    median_house_value ~ total_rooms, 
+    resamples = cv_folds
+    )
+
+```
+
+## Performance metrics
+
+Now we can collect the performance metrics with `collect_metrics()`:
+
+```{r}
+
+lm_1_res %>% 
+  collect_metrics()
+
+```
+
+```{r}
+
+lm_2_res %>% 
+  collect_metrics()
+
+```
+
+
+The metrics show the average performance across all folds. Model 1 shows a better performance in comparison to model 2, why we choose this model.
+
+Note that if we are interested in the results of every split, we could use the option `summarize = FALSE`:
+
+```{r}
+
+lm_1_res %>% 
+  collect_metrics(summarize = FALSE)
+
+```
+
+
+# Train best model
+
+Let`s fit the best model with our training data: 
+
+```{r}
+
+lm_fit <- 
+  lm_spec %>% 
+  fit( 
+  median_house_value ~ median_income, # best model
+  data = new_train 
+  )
+
+# Show your fitted model
+lm_fit
+
+```
+
+# Evaluate final model
+
+Finally, let's use our testing data and see how we can expect our model 1 to perform on new data.
+
+```{r}
+
+lm_fit %>% 
+ predict(new_test) %>%
+ mutate(truth = new_test$median_house_value) %>%
+ rmse(truth, .pred)
+
+```
+
+

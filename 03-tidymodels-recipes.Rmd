@@ -1,0 +1,239 @@
+# (PART) RECIPES {-} 
+
+# Data preprocessing
+
+*The following content is based on the [tidymodels documentation](https://www.tidymodels.org/start/recipes/) and Alisson Hill's [tidymodels workshop](https://alison.rbind.io/tags/tidymodels/).*
+
+In this tutorial, we’ll explore a tidymodels package, `recipes`, which is designed to help you preprocess your data before training your model. 
+
+Recipes are built as a series of preprocessing steps, such as:
+
+* converting qualitative predictors to indicator variables (also known as dummy variables),
+* transforming data to be on a different scale (e.g., taking the logarithm of a variable),
+* transforming whole groups of predictors together,
+* extracting key features from raw variables (e.g., getting the day of the week out of a date variable),
+
+and so on. If you are familiar with R’s formula interface, a lot of this might sound familiar and like what a formula already does. Recipes can be used to do many of the same things, but they have a much wider range of possibilities. This article shows how to use recipes for modeling.
+
+In summary, the idea of the [recipes package](https://recipes.tidymodels.org) is to define a recipe or blueprint that can be used to sequentially define the encodings and preprocessing of the data (i.e. “feature engineering”) before we build our models.
+
+# Data understanding
+
+## Import data
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+
+LINK <- "https://raw.githubusercontent.com/kirenz/datasets/master/housing.csv"
+housing_df <- read_csv(LINK)
+
+```
+
+## Data splitting
+
+```{r}
+library(tidymodels)
+
+set.seed(100)
+
+new_split <- initial_split(housing_df, 
+                           prop = 3/4, 
+                           strata = median_income, 
+                           breaks = 5)
+
+new_train <- training(new_split) 
+new_test <- testing(new_split)
+
+```
+
+## Validation set
+
+```{r}
+
+set.seed(100)
+
+cv_folds <-
+ vfold_cv(new_train, 
+          v = 5, 
+          strata = median_income,
+          breaks = 5) 
+
+cv_folds
+
+```
+
+
+# Data preparation
+
+Next, we use a `recipe()` to build a set of steps for data preprocessing and feature engineering.
+
+* First, we must tell the `recipe()` what our model is going to be (using a formula here) and what our training data is.
+* `step_novel()` will convert all nominal variables to factors.
+* We then convert the factor columns into (one or more) numeric binary (0 and 1) variables for the levels of the training data.
+* We remove any numeric variables that have zero variance.
+* We normalize (center and scale) the numeric variables. 
+
+
+
+```{r}
+
+housing_rec <-
+  recipe(median_house_value ~ ., data = new_train) %>%
+  step_novel(all_nominal(), -all_outcomes()) %>%
+  step_dummy(all_nominal()) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_predictors())
+
+# Show the content of our recipe
+housing_rec
+  
+```
+
+
+Let's have a closer look at the different components of the recipe.
+
+## recipe()
+
+First of all, we created a simple recipe (we call it `rec`) containing only an outcome (`median_house_value`) and predictors (all other variables in the dataset: `.`). To demonstrate the use of recipes step by step, we create a new object with the name `rec`:
+
+```{r }
+
+rec <- recipe(median_house_value ~ ., data = new_train)
+
+```
+
+The formula `median_house_value ~ .` indicates outcomes vs predictors.
+
+## Helper functions
+
+Here some helper functions for selecting sets of variables:
+
+* `all_predictors()`: Each x variable (right side of ~)
+* `all_outcomes()`: Each y variable (left side of ~)
+* `all_numeric()`: Each numeric variable
+* `all_nominal()`: Each categorical variable (e.g. factor, string)
+* `dplyr::select()` helpers starts_with('Lot_'), etc.
+
+
+## step_novel()
+
+[`step_novel()`](https://recipes.tidymodels.org/reference/step_novel.html) will convert all nominal variables to factors. It adds a catch-all level to a factor for any new values, which lets R intelligently predict new levels in the test set. Missing values will remain missing.
+
+```{r}
+
+rec %>%
+  step_novel(all_nominal(), -all_outcomes())
+
+```
+
+## step_dummy()
+
+Converts nominal data into dummy variables.
+
+```{r}
+
+rec %>%
+ step_dummy(all_nominal())
+
+```
+
+
+## step_zv()
+
+`step_zv()` removes zero variance variables (variables that contain only a single value). 
+
+```{r}
+
+rec %>%
+  step_zv(all_predictors())
+
+```
+
+When the recipe is applied to the data set, a column could contain only zeros. This is a "*zero-variance predictor*" that has no information within the column. While some R functions will not produce an error for such predictors, it usually causes warnings and other issues. `step_zv()` will remove columns from the data when the training set data have a single value- This step should be added to the recipe after `step_dummy()`.
+
+## step_normalize()
+
+Centers then scales numeric variable (mean = 0, sd = 1)
+
+```{r}
+
+rec %>%
+  step_normalize(all_numeric())
+
+```
+
+Now it's time to **specify** and then **fit** our models. 
+
+
+
+
+
+
+
+# Model building
+
+To combine the data preparation with the model building, we use the package [workflows](https://workflows.tidymodels.org). 
+
+A workflow is an object that can bundle together your pre-processing, modeling, and post-processing requests. 
+
+## Specify model
+
+```{r}
+
+lm_spec <- 
+  linear_reg() %>% 
+  set_engine("lm") %>% 
+  set_mode(mode = "regression")
+
+```
+
+
+## Create workflow
+
+
+```{r}
+
+lm_wflow <-
+ workflow() %>%
+ add_model(lm_spec) %>% 
+ add_recipe(housing_rec)
+
+```
+
+## Evaluate model
+
+Now we can fit the model and collect the performance metrics with `collect_metrics()`:
+
+
+
+```{r}
+
+
+lm_wflow_eval <- 
+  lm_wflow %>% 
+  fit_resamples(
+    median_house_value ~ ., 
+    resamples = cv_folds
+    ) 
+
+lm_wflow_eval%>% 
+    collect_metrics()
+
+```
+
+
+# Last fit and evaluation 
+
+Fit the final best model to the training set and evaluate the test set with the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html):
+
+
+```{r}
+
+last_fit_lm <- last_fit(lm_wflow, split = new_split)
+
+# Show RMSE and RSQ
+last_fit_lm %>% 
+  collect_metrics()
+
+```
