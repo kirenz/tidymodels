@@ -67,6 +67,7 @@ Here some helper functions for selecting sets of variables:
 * `all_outcomes()`: Each y variable (left side of ~)
 * `all_numeric()`: Each numeric variable
 * `all_nominal()`: Each categorical variable (e.g. factor, string)
+* 
 * `dplyr::select()` helpers starts_with('Lot_'), etc.
 
 
