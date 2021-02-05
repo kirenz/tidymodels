@@ -216,7 +216,7 @@ data_explore %>%
 ```
 
 
-One important thing you may want to do before preparing the data for our algorithms is to try out various attribute combinations. For example, the total number of rooms in a district is not very useful if you don’t know how many households there are. What you really want is the number of rooms per household. Similarly, the total number of bedrooms by itself is not very useful: you probably want to compare it to the number of rooms. And the population per household also seems like an interesting attribute combination to look at. Let’s create these new attributes:
+One important thing you may want to do before preparing the data for algorithms is to try out some attribute combinations. For example, the total number of rooms in a district is not very useful if you don’t know how many households there are. What you really want is the number of rooms per household. Similarly, the total number of bedrooms by itself is not very useful: you probably want to compare it to the number of rooms. And the population per household also seems like an interesting attribute combination to look at. Let’s create these new attributes:
 
 ```{r}
 
@@ -238,12 +238,11 @@ data_explore %>%
 
 ```
 
-Note that the new bedrooms_per_room attribute is  more correlated with the median house value than the total number of rooms or bedrooms. Apparently houses with a lower bedroom/room ratio tend to be more expensive. The number of rooms per household is also more informative than the total number of rooms in a district—obviously the larger the houses, the more expensive they are.
+Note that the new `bedrooms_per_room` attribute is more correlated with the median house value than the total number of rooms or bedrooms. Apparently houses with a lower bedroom/room ratio tend to be more expensive. The number of rooms per household is also more informative than the total number of rooms in a district —obviously the larger the houses, the more expensive they are.
 
-This round of exploration does not have to be absolutely thorough; the point is to start off on the right foot and quickly gain insights that will help you get a first reasonably good prototype. But this is an iterative process: once you get a prototype up and running, you can analyze its output to gain more insights and come back to this exploration step.
+This round of exploration does not have to be absolutely thorough; the point is to  gain insights that will help you get a first reasonably good prototype. But this is an iterative process: once you get a prototype up and running, you can analyze its output to gain more insights and come back to this exploration step.
 
-
-We can also create a geographical scatterplot of the data:
+We end our data exploration with a geographical scatterplot of the data:
 
 ```{r point-long-lat, fig.cap="Scatterplot of longitude and latitude", out.width='80%'}
 
@@ -336,6 +335,11 @@ To get started, let’s create a recipe for our regression model. Before trainin
 
 * `update_role()`: This step of adding roles to a recipe is optional; the purpose of using it here is that those two variables can be retained in the data but not included in the model. This can be convenient when, after the model is fit, we want to investigate some poorly predicted value. These ID columns will be available and can be used to try to understand what went wrong. 
 
+* `step_mutate()` creates a specification of a recipe step that will add variables using dplyr::mutate().
+
+* `step_rm()` creates a specification of a recipe step that will remove variables based on their name, type, or role.
+
+
 * `step_naomit()` creates a specification of a recipe step that will remove observations (rows of data) if they contain NA or NaN values
 
 * `step_novel()` will convert all nominal variables to factors.
@@ -355,6 +359,12 @@ housing_rec <-
   update_role(longitude, 
               latitude, 
               new_role = "ID") %>% 
+  step_mutate(
+    rooms_per_household = total_rooms/households,
+        bedrooms_per_room = total_bedrooms/total_rooms,
+        population_per_household = population/households
+    ) %>% 
+  step_rm(total_rooms, total_bedrooms, population, households) %>% 
   step_naomit(all_predictors()) %>% 
   step_novel(all_nominal(), -all_outcomes()) %>%
   step_dummy(all_nominal()) %>%
@@ -372,30 +382,203 @@ summary(housing_rec)
 ```
 
 
+# Model building
+
+To combine the data preparation with the model building, we use the package [workflows](https://workflows.tidymodels.org). 
+
+A workflow is an object that can bundle together your pre-processing, modeling, and post-processing requests. 
+
+## Specify linear model
+
+1. Pick a `model type` and set the `engine`: choose from this [list](https://www.tidymodels.org/find/parsnip/)
+2. Set the `mode`: regression or classification
+
+```{r}
+library(tidymodels)
+
+lm_spec <- # your model specification
+  linear_reg() %>%  # model type
+  set_engine(engine = "lm") %>%  # model engine
+  set_mode("regression") # model mode
+
+# Show your model specification
+lm_spec
+
+```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-We can drop rows containing missing values with the function `drop_na()`:
+## Random forest
 
 ```{r}
 
-housing_df <- 
-  housing_df %>% 
-  drop_na(total_bedrooms)
+rf_mod <- 
+  rand_forest() %>% 
+  set_engine("ranger") %>% 
+  set_mode("regression")
 
 ```
+
+
+## Boosted tree (XGBoost)
+
+```{r}
+
+#install.packages("xgboost")
+
+xgb_mod <- 
+  boost_tree() %>% 
+  set_engine("xgboost") %>% 
+  set_mode("regression") 
+
+```
+
+
+# Create workflows
+
+
+```{r}
+
+lm_wflow <-
+ workflow() %>%
+ add_model(lm_spec) %>% 
+ add_recipe(housing_rec)
+
+```
+
+```{r}
+
+lm_wflow <-
+ workflow() %>%
+ add_model(lm_spec) %>% 
+ add_recipe(housing_rec)
+
+```
+
+```{r}
+
+lm_wflow <-
+ workflow() %>%
+ add_model(lm_spec) %>% 
+ add_recipe(housing_rec)
+
+```
+
+## Evaluate models
+
+
+
+Let's build a validation set to evaluate two simple linear regression models with different predictors. 
+
+First of all, we build a set of 5 validation folds with the function `vfold_cv` (we also use stratified sampling in this example):
+
+```{r}
+
+set.seed(100)
+
+cv_folds <-
+ vfold_cv(data_train, 
+          v = 5, 
+          strata = median_house_value,
+          breaks = 4) 
+
+cv_folds
+
+```
+
+Now we can fit the models and collect the performance metrics with `collect_metrics()`:
+# Model building
+
+
+## Evaluate models  
+
+We can use the set of resamples to estimate the performance of our two simple models using the `fit_resamples()` function to fit the models on each of the 5 folds and store the results as `lm_1_res` and `lm_2_res` respectively.
+
+`fit_resamples()` will fit our model to each resample and evaluate on the heldout set from each resample. The function is only used for computing performance metrics across some set of resamples to evaluate our models - the models are not stored. 
+
+
+## Evaluate models  
+
+We can use the set of resamples to estimate the performance of our two simple models using the `fit_resamples()` function to fit the models on each of the 5 folds and store the results as `lm_1_res` and `lm_2_res` respectively.
+
+`fit_resamples()` will fit our model to each resample and evaluate on the heldout set from each resample. The function is only used for computing performance metrics across some set of resamples to evaluate our models - the models are not stored. 
+
+## Fit model 1
+
+```{r}
+
+lm_1_res <-
+  lm_spec %>% 
+  fit_resamples(
+    median_house_value ~ median_income, 
+    resamples = cv_folds
+    )
+
+```
+
+## Fit model 2
+
+```{r}
+
+lm_2_res <-
+  lm_spec %>% 
+  fit_resamples(
+    median_house_value ~ total_rooms, 
+    resamples = cv_folds
+    )
+
+```
+
+
+
+```{r}
+
+
+lm_wflow_eval <- 
+  lm_wflow %>% 
+  fit_resamples(
+    median_house_value ~ ., 
+    resamples = cv_folds
+    ) 
+
+lm_wflow_eval%>% 
+    collect_metrics()
+
+```
+
+
+# Last fit and evaluation 
+
+Fit the final best model to the training set and evaluate the test set with the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html):
+
+
+```{r}
+
+last_fit_lm <- last_fit(lm_wflow, split = new_split)
+
+# Show RMSE and RSQ
+last_fit_lm %>% 
+  collect_metrics()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
