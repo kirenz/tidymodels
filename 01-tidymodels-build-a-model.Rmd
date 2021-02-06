@@ -1,5 +1,5 @@
 
-# (PART) BUILD A MODEL {-} 
+# (PART) REGRESSION {-} 
 
 # Introduction {#intro}
 
@@ -32,7 +32,6 @@ parallel::detectCores(logical = TRUE)
 library(doMC)
 registerDoMC(cores = 4)
 
-
 theme_set(theme_classic())
 ```
 
@@ -52,7 +51,7 @@ To use the code in this article, you will need to install the following packages
 
 ---
 
-In this tutorial we'll specify multiple regression models (Lasso, Random Forest and XGBoost) by using `tidymodels` packages. Furthermore, we follow the data science lifecycle process proposed in the "cross industry standard process for data mining" (CRISP-DM). To learn more about CRISP-DM, review this [presentation](https://docs.google.com/presentation/d/1Y_6d-yv0Wq9WQvWkYS64KYkcSoswewm-7t2jfSz3aT4/edit?usp=sharing). 
+In this tutorial we'll specify multiple regression models (Lasso, Random Forest and XGBoost) with different `tidymodels` packages. Furthermore, we follow the data science lifecycle process proposed in the "cross industry standard process for data mining" (CRISP-DM). To learn more about CRISP-DM, review this [presentation](https://docs.google.com/presentation/d/1Y_6d-yv0Wq9WQvWkYS64KYkcSoswewm-7t2jfSz3aT4/edit?usp=sharing). 
 
 
 ```{r crisp, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Cross Industry Standard Process for Data Mining (CRISP-DM)}
@@ -62,12 +61,12 @@ knitr::include_graphics("css/CRISP-DM.png")
 ```
 
 
-In essence, we follow this steps:
+In essence, we cover the following steps:
 
 
 **Business understanding**
 
-1. Describe your goals 
+1. Describe your goal
 
 1. Frame the problem
 
@@ -103,7 +102,6 @@ In essence, we follow this steps:
 1. Train your best model with all of the `training data`
 
 1. Double-check that model against the `test set`.
-
 
 
 
@@ -405,9 +403,7 @@ Data preparation:
 :::
 
 
-Next, we’ll preprocess our data before training models. Therefore, we mainly use the tidymodels packages `recipes`. 
-
-`Recipes` are built as a series of optional data preparation steps, such as:
+Next, we’ll preprocess our data before training models. Therefore, we mainly use the tidymodels packages `recipes`. `Recipes` are built as a series of optional data preparation steps, such as:
 
 * *Data cleaning*: Fix or remove outliers, fill in missing values (e.g., with zero, mean, median…) or drop their rows (or columns).
 
@@ -419,14 +415,14 @@ aggregate features into promising new features.
 * *Feature scaling*: Standardize or normalize features.
 
 
-We will want to use our recipe across several steps as we train and test our models. To simplify this process, we can use a *model workflow*, which pairs a model and recipe together. This is a straightforward approach because different recipes are often needed for different models, so when a model and recipe are bundled, it becomes easier to train and test workflows. 
+We will want to use our recipe across several steps as we train and test our models. To simplify this process, we can use a *model workflow*, which pairs a model and recipe together. 
 
 
 ## Data prepropecessing recipe 
 
 The type of data preprocessing is dependent on the type of model being fit. The excellent book "Tidy Modeling with R" provides an [appendix with recommendations for baseline levels of preprocessing](https://www.tmwr.org/pre-proc-table.html) that are needed for various model functions. 
 
-Let’s create a `recipe` for our regression models:
+Let’s create a `recipe` for our regression models (Lasso, Random Forest, XGBoost):
 
 * The `recipe()` function has two arguments: 
  * *A formula*. Any variable on the left-hand side of the tilde (`~`) is considered the model outcome (here, `median_house_value`). On the right-hand side of the tilde are the predictors. Variables may be listed by name, or you can use the dot (`.`) to indicate all other variables as predictors. 
@@ -471,8 +467,7 @@ housing_rec <-
 ```
 
 
-
-To get the current set of variables and roles, use the `summary()` function:
+To view the current set of variables and roles, use the `summary()` function:
 
 ```{r}
 
@@ -501,15 +496,13 @@ cv_folds <-
 
 We will come back to the validation set after we specified our models. 
 
-
-
 # Model building
 
 ## Specify models
 
-We want to assess a few different models, including a regularized method (glmnet). The process is always as follows:
+We want to assess three different models. The process is always as follows:
 
-1. Pick a `model type` and 
+1. Pick a `model type` 
 2. set the `engine`: choose from this [list](https://www.tidymodels.org/find/parsnip/)
 3. Set the `mode`: regression or classification
 
@@ -531,7 +524,6 @@ lasso_spec
 ### Random forest
 
 ```{r}
-
 library(ranger)
 
 rf_spec <- 
@@ -541,11 +533,9 @@ rf_spec <-
 
 ```
 
-
 ### Boosted tree (XGBoost)
 
 ```{r}
-
 library(xgboost)
 
 xgb_spec <- 
@@ -558,26 +548,24 @@ xgb_spec <-
 
 ## Create workflows
 
-
-To combine the data preparation with the model building, we use the package [workflows](https://workflows.tidymodels.org). A workflow is an object that can bundle together your pre-processing, modeling, and even post-processing requests. 
-
+To combine the data preparation recipe with the model building, we use the package [workflows](https://workflows.tidymodels.org). A workflow is an object that can bundle together your pre-processing recipe, modeling, and even post-processing requests (like calculating the RMSE). 
 
 ### Lasso
 
-Note that we first need to normalize (z-standardize) the data in a Lasso model. We only need to perform this step for the Lasso regression and therefore just add this step to a new recipe we call `housing_rec_lasso`: 
+Note that we first need to normalize (z-standardize) the data in a Lasso model. We only need to perform this step for the Lasso regression model and therefore just add this step to a new recipe we call `housing_rec_lasso`: 
 
 ```{r}
 
-# We update the recipe for our Lasso regression
+# update the recipe for Lasso 
 housing_rec_lasso <- # create a new recipe object
-  housing_rec %>%  # use the recipe
-  step_normalize(all_numeric()) # add step_normalize
+  housing_rec %>%  # use the old recipe
+  step_normalize(all_numeric(), -all_outcomes()) # add the step_normalize
 
+# bundle recipe and model
 lasso_wflow <- # new workflow object
  workflow() %>% # use workflow function
  add_recipe(housing_rec_lasso) %>%   # use the Lasso recipe
  add_model(lasso_spec)   # add your model spec
-
 
 ```
 
@@ -590,7 +578,6 @@ rf_wflow <-
  workflow() %>%
  add_recipe(housing_rec) %>% # use the regular recipe
  add_model(rf_spec) 
-
 
 ```
 
@@ -607,11 +594,11 @@ xgb_wflow <-
 
 ```
 
-## Evaluate models on validation set
+## Evaluate models
 
-Now we can use our validation set to estimate the performance of our models using the `fit_resamples()` function to fit the models on each of the 5 folds and store the results. 
+Now we can use our validation set (`cv_folds`) to estimate the performance of our models using the `fit_resamples()` function to fit the models on each of the 5 folds and store the results. 
 
-Note that `fit_resamples()` will fit our model to each resample and evaluate on the heldout set from each resample. The function is only used for computing performance metrics across some set of resamples to evaluate our models - the models are not even stored. However, in our example, we save the predictions in order to visualize the model fit and residuals with `control_resamples(save_pred = TRUE)`.
+Note that `fit_resamples()` will fit our model to each resample and evaluate on the heldout set from each resample. The function is usually only used for computing performance metrics across some set of resamples to evaluate our models - the models are not even stored. However, in our example we save the predictions in order to visualize the model fit and residuals with `control_resamples(save_pred = TRUE)`.
 
 Finally, we collect the performance metrics with `collect_metrics()` and pick the model that does best on the validation set.
 
@@ -620,17 +607,19 @@ Finally, we collect the performance metrics with `collect_metrics()` and pick th
 
 ```{r}
 
+set.seed(100)
+
 # to save the predictions in order to visualize 
 # the model fit and residuals
 keep_pred <- control_resamples(save_pred = TRUE)
 
-set.seed(100)
 
 lasso_res <- # store the results 
   lasso_wflow %>% # use workflow object
   fit_resamples(resamples = cv_folds,
                 control = keep_pred
     )
+
 ```
 
 Show average performance over all folds:
@@ -655,16 +644,13 @@ To obtain the assessment set predictions:
 
 assess_res <- collect_predictions(lasso_res)
 
-```
-
-
-```{r}
 assess_res %>% 
   ggplot(aes(x = median_house_value, y = .pred)) + 
   geom_point(alpha = .15) +
   geom_abline(col = "red") + 
   coord_obs_pred() + 
   ylab("Predicted")
+
 ```
 
 There are two median house values in the training set that are significantly underpredicted by the model. Which districts are that?
@@ -680,6 +666,8 @@ under_predicted <-
 under_predicted
 
 ```
+
+Show the two observations in the training data.
 
 ```{r}
 
@@ -702,10 +690,9 @@ qmplot(x = longitude,
 
 ```
 
-In our example, we don't further investigate the reasons for the underprediction. We just assume that the two districts are outliers. In a real projet, we would go back to our original data, remove the two cases and train the model again. 
+In this tutorial, we don't further investigate the reasons for the underprediction. In a real projet, we would go back to our original data, eventually remove the two cases and train the model again. 
 
 If we would do this, the new result would be as follows:
-
 
 
 ### Random forest
@@ -743,7 +730,41 @@ xgb_res %>% collect_metrics(summarize = TRUE)
 
 ### Compare models
 
+Extract the RMSE from our models to compare them:
+
 ```{r}
+
+lasso_rmse <- 
+  lasso_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  rename(rmse = mean) %>% 
+  mutate(model = "lasso")
+
+rf_rmse <- 
+  rf_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  rename(rmse = mean) %>% 
+  mutate(model = "random forest")
+
+xgb_rmse <- 
+  xgb_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  rename(rmse = mean) %>% 
+  mutate(model = "XGBoost")
+
+# create dataframe with all models
+model_compare <- bind_rows(lasso_rmse,
+                           rf_rmse,
+                           xgb_rmse) 
+
+# show all models
+model_compare
+
+# find minmum rmse
+model_compare %>% 
+  filter(.metric== "rmse") %>% 
+  select(model, rmse, std_err) %>% 
+  slice_min(rmse)
 
 ```
 
@@ -751,127 +772,16 @@ xgb_res %>% collect_metrics(summarize = TRUE)
 
 # Last fit and evaluation 
 
-Fit the final best model to the training set and evaluate the test set with the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html):
+Now it's time to fit the best model (in our case the XGBoost model) one last time to the full training set and evaluate the resulting final model on the test set. Tidymodels provides the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html) which does all of the described steps for us. We just need to provide the workflow object of the best model as well as the data split object (not the training data).
 
 
 ```{r}
 
-last_fit_lm <- last_fit(lm_wflow, split = new_split)
+last_fit_xgb <- last_fit(xgb_wflow, split = data_split)
 
 # Show RMSE and RSQ
-last_fit_lm %>% 
+last_fit_xgb %>% 
   collect_metrics()
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Model building
-
-## Model specification
-
-1. Pick a `model type`: choose from this [list](https://www.tidymodels.org/find/parsnip/)
-2. Set the `engine`: choose from this [list](https://www.tidymodels.org/find/parsnip/)
-3. Set the `mode`: regression or classification
-
-```{r}
-library(tidymodels)
-
-lm_spec <- # your model specification
-  linear_reg() %>%  # model type
-  set_engine(engine = "lm") %>%  # model engine
-  set_mode("regression") # model mode
-
-# Show your model specification
-lm_spec
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Model training
-
-In the training process, you run an algorithm on data and thereby produce a model. This process is also called model fitting.
-
-```{r}
-
-lm_fit <- # your fitted model
-  lm_spec %>%  # your model specification  
-  fit( 
-  median_house_value ~ median_income, # a Linear Regression formula 
-  data = train_data # your data
-  )
-
-# Show your fitted model
-lm_fit
-
-```
-
-## Model predictions
-
-We use our fitted model to make predictions. 
-
-```{r}
-
-price_pred <- 
-  lm_fit %>% 
-  predict(new_data = train_data) %>%
-  mutate(price_truth = train_data$median_house_value)
-
-head(price_pred)
-
-```
-
-
-
-
-
-
-
-
-
-
-
-## Model evaluation 
-
-We use the Root Mean Squared Error (RMSE) to evaluate our regression model. Therefore, we use the function $rmse(data, truth, estimate)$.
-
-```{r}
-
-rmse(data = price_pred, 
-     truth = price_truth, 
-     estimate = .pred)
-
-```
-
+And this is our final result.
