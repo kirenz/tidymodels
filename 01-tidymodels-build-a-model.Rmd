@@ -5,22 +5,43 @@
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(cache = TRUE, warning = FALSE, message = FALSE, 
-                      echo = TRUE, dpi = 300, cache.lazy = TRUE,
-                      fig.width = 8, fig.height = 5,
+knitr::opts_chunk$set(cache = TRUE, 
+                      warning = FALSE,
+                      message = FALSE, 
+                      echo = TRUE, 
+                      dpi = 300, 
+                      cache.lazy = TRUE,
+                      fig.width = 8, 
+                      fig.height = 5,
                       eval=TRUE)
 library(tidyverse)
 library(skimr)
 library(GGally)
 library(ggmap)
 library(tidymodels)
+library(visdat)
+
+# The number of physical cores in the hardware:
+parallel::detectCores(logical = FALSE)
+
+# The number of possible independent processes that can 
+# be simultaneously used:  
+parallel::detectCores(logical = TRUE)
+
+# Unix and macOS only
+library(doMC)
+registerDoMC(cores = 4)
+
 
 theme_set(theme_classic())
 ```
 
+
+---
+
 *The following content is adapted from the excellent book “Hands-on machine learning with scikit-learn, keras and tensorflow” from @Geron2019.*
 
-In this tutorial you will learn how to specify a regression model with the tidymodels package. To use the code in this article, you will need to install the following packages: 
+To use the code in this article, you will need to install the following packages: 
 
 * [tidyverse](https://www.tidyverse.org/) 
 * [tidymodels](https://www.tidymodels.org/) 
@@ -29,19 +50,87 @@ In this tutorial you will learn how to specify a regression model with the tidym
 * [visdat](https://github.com/ropensci/visdat)
 * [ggmap](https://github.com/dkahle/ggmap)
 
-```{r}
+---
 
-library(tidyverse)
-library(tidymodels)
-library(skimr)
-library(GGally)
-library(visdat)
-library(ggmap)
+In this tutorial we'll specify multiple regression models (Lasso, Random Forest and XGBoost) by using `tidymodels` packages. Furthermore, we follow the data science lifecycle process proposed in the "cross industry standard process for data mining" (CRISP-DM). To learn more about CRISP-DM, review this [presentation](https://docs.google.com/presentation/d/1Y_6d-yv0Wq9WQvWkYS64KYkcSoswewm-7t2jfSz3aT4/edit?usp=sharing). 
+
+
+```{r crisp, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Cross Industry Standard Process for Data Mining (CRISP-DM)}
+
+knitr::include_graphics("css/CRISP-DM.png")
 
 ```
 
 
-In this example, our goal is to build a model of housing prices in California. In particular, the model should learn from California census data and be able to predict the median house price in any district (population of 600 to 3000 people), given some predictor variables. We use the root mean square error (RMSE) as a performance measure for our regression problem.
+In essence, we follow this steps:
+
+
+**Business understanding**
+
+1. Describe your goals 
+
+1. Frame the problem
+
+
+**Data understanding**
+
+1. Get an overview of your data structure
+
+1. Split the data into `training data` and `test data`. 
+
+1. Perform data exploration on a copy of the training data. 
+
+
+**Data preparation**
+
+1. Create data preprocessing recipes for:
+ * Feature selection
+ * Feature engineering
+
+1. Create a `validation set` (e.g., with k-fold crossvalidation) 
+
+
+**Modeling**
+
+1. Specify the models
+
+1. Bundle data preprocessing recipe and model in a workflow 
+
+1. Compare model performance on the `validation set` 
+
+1. Pick the model that does best on the `validation set`
+
+1. Train your best model with all of the `training data`
+
+1. Double-check that model against the `test set`.
+
+
+
+
+# Business understanding
+
+
+:::note
+In business understanding, you:
+
+- Define your (business) goal
+- Frame the problem (regression, classification,...)
+- Choose a performance measure
+- Show the data processing components
+:::
+
+First of all, we take a look at the big picture and define the objective of our data science project in business terms.
+
+In our example, the goal is to build a model of housing prices in California. In particular, the model should learn from California census data and be able to predict the median house price in any district (population of 600 to 3000 people), given some predictor variables. Hence, we face a supervised learning situation and use a regression model to predict the numerical outcomes. Furthermore, we use the root mean square error (RMSE) as a performance measure for our regression problem.
+
+Let's assume that the model’s output (a prediction of a district’s median housing price) will be fed to another analytics system, along with other data. This downstream system will determine whether it is worth investing in a given area or not. The data processing components (also called pipeline) are shown in \@ref(fig:datapipeline) (I used [Google's architectural templates](https://docs.google.com/presentation/d/1vjm5YdmOH5LrubFhHf1vlqW2O9Z2UqdWA8biN3e8K5U/edit#slide=id.g19b41f69d7_2_265) to draw the pipeline).
+
+
+```{r datapipeline, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Cross Industry Standard Process for Data Mining (CRISP-DM)}
+
+knitr::include_graphics("css/data-pipeline.png")
+
+```
 
 
 # Data understanding
@@ -68,7 +157,7 @@ housing_df <- read_csv(LINK)
 
 ## Data overview
 
-Next, we take a look at the data structure. California census top 4 rows of the DataFrame: 
+Take a look at the top 4 rows of the DataFrame: 
 
 ```{r}
 
@@ -76,7 +165,7 @@ head(housing_df, 4)
 
 ```
 
-Data info:
+Next, show the data structure:
 
 ```{r}
 
@@ -84,7 +173,7 @@ glimpse(housing_df)
 
 ```
 
-The package `visdat` helps explore the data class structure:
+The package `visdat` helps explore the data class structure visualy:
 
 ```{r}
 
@@ -103,7 +192,9 @@ vis_miss(housing_df, sort_miss = TRUE)
 Alternative method to obtain missing data: 
 
 ```{r}
+
 is.na(housing_df) %>% colSums()
+
 ```
 
 
@@ -129,13 +220,12 @@ housing_df %>%
 
 In other words, we would like to have instances for each *stratum*, or else the estimate of a stratum's importance may be biased. A *stratum* (plural strata) refers to a subset (part) of the population (entire collection of items under consideration) which is being sampled. You should not have too many strata, and each stratum should be large enough. We use 4 strata in our example. 
 
-To split the data, we can use the `rsample` package (included in `tidymodels`) to create an object that contains the information on how to split the data (which we call `data_split`), and then two more rsample functions to create data frames for the training and testing sets:
+To actually split the data, we can use the `rsample` package (included in `tidymodels`) to create an object that contains the information on how to split the data (which we call `data_split`), and then two more `rsample` functions to create data frames for the training and testing sets:
 
 ```{r}
 
 # Fix the random numbers by setting the seed 
 # This enables the analysis to be reproducible 
-# when random numbers are used 
 set.seed(123)
 
 # Put 3/4 of the data into the training set 
@@ -144,21 +234,24 @@ data_split <- initial_split(housing_df,
                            strata = median_house_value, 
                            breaks = 4)
 
-# Create data frames for the two sets:
+# Create dataframes for the two sets:
 train_data <- training(data_split) 
 test_data <- testing(data_split)
 
 ```
 
+
 ## Data exploration
 
-Now let's examine the training data. We first make a copy of the data:
+The point of data exploration is to gain insights that will help you select important variables for your model and to get ideas for feature engineering in the data preparation phase, where we prepare the data for learning algorithms. Ususally, data exploration is an iterative process: once you get a prototype model up and running, you can analyze its output to gain more insights and come back to this exploration step.
+
+Now let's examine the training data in more detail. We first make a copy of the data, since we don't want to alter our training data during data exploration. 
 
 ```{r}
+
 data_explore <- train_data
+
 ```
-
-
 
 We obtain a data summary of numerical and categorical attributes using a function from the package `skimr`:
 
@@ -168,81 +261,8 @@ skim(data_explore)
 
 ```
 
-Let's count the levels of our categorical variable `ocean_proximity` to get an overview about the variable:
 
-```{r}
-
-data_explore %>% 
-  count(ocean_proximity,
-        sort = TRUE)
-
-```
-
-
-The function `ggscatmat` from the package `GGally` creates a matrix with scatterplots, densities and correlations for numeric columns. In our code, we enter the dataset `housing_df`, choose columns 6 to 9, a color column for our categorical variable `ocean_proximity`, and an alpha level of 0.8 (for transparency).
-
-```{r }
-
-ggscatmat(data_explore, columns = 6:9, color="ocean_proximity", alpha=0.8)
-
-```
-
-To obtain an overview of even more visualizations, we can use the function `ggpairs`:
-
-```{r }
-
-ggpairs(data_explore)
-
-```
-
-To plot only correlations of your data, we can use `vis_cor`. We first use Pearson's correlation coefficient:
-
-```{r}
-
-data_explore %>% 
-  select(where(is.numeric)) %>% 
-  vis_cor(cor_method = "pearson")
-
-```
-
-Spearman's correlation coefficient:
-
-```{r}
-
-data_explore %>% 
-  select(where(is.numeric)) %>% 
-  vis_cor(cor_method = "spearman")
-
-```
-
-
-One important thing you may want to do before preparing the data for algorithms is to try out some attribute combinations. For example, the total number of rooms in a district is not very useful if you don’t know how many households there are. What you really want is the number of rooms per household. Similarly, the total number of bedrooms by itself is not very useful: you probably want to compare it to the number of rooms. And the population per household also seems like an interesting attribute combination to look at. Let’s create these new attributes:
-
-```{r}
-
-data_explore <- 
-  data_explore %>% 
-  mutate(rooms_per_household = total_rooms/households,
-        bedrooms_per_room = total_bedrooms/total_rooms,
-        population_per_household = population/households)
-
-```
-
-And now let’s look at the correlation matrix again:
-
-```{r}
-
-data_explore %>% 
-  select(where(is.numeric)) %>% 
-  vis_cor(cor_method = "spearman")
-
-```
-
-Note that the new `bedrooms_per_room` attribute is more correlated with the median house value than the total number of rooms or bedrooms. Apparently houses with a lower bedroom/room ratio tend to be more expensive. The number of rooms per household is also more informative than the total number of rooms in a district —obviously the larger the houses, the more expensive they are.
-
-This round of exploration does not have to be absolutely thorough; the point is to  gain insights that will help you get a first reasonably good prototype. But this is an iterative process: once you get a prototype up and running, you can analyze its output to gain more insights and come back to this exploration step.
-
-We end our data exploration with a geographical scatterplot of the data:
+We start our visual data exploration with a geographical scatterplot of the data:
 
 ```{r point-long-lat, fig.cap="Scatterplot of longitude and latitude", out.width='80%'}
 
@@ -296,10 +316,82 @@ qmplot(x = longitude,
 ```
 
 
+Now let's count the levels of our categorical variable `ocean_proximity` to get an overview about the variable:
+
+```{r}
+
+data_explore %>% 
+  count(ocean_proximity,
+        sort = TRUE)
+
+```
+
+
+The function `ggscatmat` from the package `GGally` creates a matrix with scatterplots, densities and correlations for numeric columns. In our code, we enter the dataset `housing_df`, choose columns 6 to 9, a color column for our categorical variable `ocean_proximity`, and an alpha level of 0.8 (for transparency).
+
+```{r }
+
+ggscatmat(data_explore, columns = 6:9, color="ocean_proximity", alpha=0.8)
+
+```
+
+To obtain an overview of even more visualizations, we can use the function `ggpairs`:
+
+```{r }
+
+ggpairs(data_explore)
+
+```
+
+To plot only correlations of our numerical data, we can use `vis_cor`. We first use Pearson's correlation coefficient:
+
+```{r}
+
+data_explore %>% 
+  select(where(is.numeric)) %>% # only select numerical data
+  vis_cor(cor_method = "pearson")
+
+```
+
+Spearman's correlation coefficient:
+
+```{r}
+
+data_explore %>% 
+  select(where(is.numeric)) %>% 
+  vis_cor(cor_method = "spearman")
+
+```
+
+
+One important thing you may want to do before preparing the data for algorithms is to try out some variable combinations. For example, the *total number of rooms* in a district is not very useful if you don’t know how many households there are. What you really want is the *number of rooms per household*. Similarly, the total number of bedrooms by itself is not very useful: you probably want to compare it to the number of rooms. And the *population per household* also seems like an interesting attribute combination to look at. Let’s create these new attributes:
+
+```{r}
+
+data_explore <- 
+  data_explore %>% 
+  mutate(rooms_per_household = total_rooms/households,
+        bedrooms_per_room = total_bedrooms/total_rooms,
+        population_per_household = population/households)
+
+```
+
+And now let’s look at the correlations again:
+
+```{r}
+
+data_explore %>% 
+  select(where(is.numeric)) %>% 
+  vis_cor(cor_method = "spearman")
+
+```
+
+Note that the new `bedrooms_per_room` attribute is more correlated with the median house value than the total number of rooms or bedrooms. Apparently houses with a lower bedroom/room ratio tend to be more expensive. The number of rooms per household is also more informative than the total number of rooms in a district —obviously the larger the houses, the more expensive they are.
+
+
 
 # Data preparation
 
-Prepare the data for learning algorithms.
 
 :::note
 Data preparation:
@@ -309,69 +401,76 @@ Data preparation:
 - Feature selection
 - Feature engineering
 - Feature scaling
+- Create a validation set
 :::
 
 
-Next, we’ll explore the tidymodels packages `recipes` and `workflows` which are designed to help you preprocess your data before training your model. `Recipes` are built as a series of optional preprocessing steps, such as:
+Next, we’ll preprocess our data before training models. Therefore, we mainly use the tidymodels packages `recipes`. 
 
-* Data cleaning: Fix or remove outliers, fill in missing values (e.g., with zero, mean, median…) or drop their rows (or columns).
+`Recipes` are built as a series of optional data preparation steps, such as:
 
-* Feature selection: Drop the attributes that provide no useful information for the task.
+* *Data cleaning*: Fix or remove outliers, fill in missing values (e.g., with zero, mean, median…) or drop their rows (or columns).
 
-* Feature engineering: Discretize continuous features, decompose features (e.g., categorical, date/time, etc.), add promising transformations of features (e.g., log(x), sqrt(x), x2 , etc.) or
+* *Feature selection*: Drop the attributes that provide no useful information for the task.
+
+* *Feature engineering*: Discretize continuous features, decompose features (e.g., categorical, date/time, etc.), add promising transformations of features (e.g., log(x), sqrt(x), x2 , etc.) or
 aggregate features into promising new features.
 
-* Feature scaling: Standardize or normalize features.
-
-To combine all of the steps discussed above with model building, we can use the package [workflows](https://workflows.tidymodels.org). A workflow is an object that can bundle together your pre-processing, modeling, and post-processing requests. 
+* *Feature scaling*: Standardize or normalize features.
 
 
-## Create recipe and roles 
+We will want to use our recipe across several steps as we train and test our models. To simplify this process, we can use a *model workflow*, which pairs a model and recipe together. This is a straightforward approach because different recipes are often needed for different models, so when a model and recipe are bundled, it becomes easier to train and test workflows. 
 
-To get started, let’s create a recipe for our regression model. Before training the models, we can use a recipe to create a few new predictors and conduct some preprocessing required by the model.
 
-* The `recipe()` function has two arguments: *A formula*. Any variable on the left-hand side of the tilde (`~`) is considered the model outcome (here, `median_house_value`). On the right-hand side of the tilde are the predictors. Variables may be listed by name, or you can use the dot (`.`) to indicate all other variables as predictors. *The data*. A recipe is associated with the data set used to create the model. This will typically be the training set, so `data = train_data` here. 
+## Data prepropecessing recipe 
+
+The type of data preprocessing is dependent on the type of model being fit. The excellent book "Tidy Modeling with R" provides an [appendix with recommendations for baseline levels of preprocessing](https://www.tmwr.org/pre-proc-table.html) that are needed for various model functions. 
+
+Let’s create a `recipe` for our regression models:
+
+* The `recipe()` function has two arguments: 
+ * *A formula*. Any variable on the left-hand side of the tilde (`~`) is considered the model outcome (here, `median_house_value`). On the right-hand side of the tilde are the predictors. Variables may be listed by name, or you can use the dot (`.`) to indicate all other variables as predictors. 
+ * *The data*. A recipe is associated with the data set used to create the model. This will typically be the training set, so `data = train_data` here. 
 
 
 * `update_role()`: This step of adding roles to a recipe is optional; the purpose of using it here is that those two variables can be retained in the data but not included in the model. This can be convenient when, after the model is fit, we want to investigate some poorly predicted value. These ID columns will be available and can be used to try to understand what went wrong. 
 
-* `step_mutate()` creates a specification of a recipe step that will add variables using dplyr::mutate().
+* `step_mutate()` adds new variables.
 
-* `step_rm()` creates a specification of a recipe step that will remove variables based on their name, type, or role.
+* `step_rm()` removes variables based on their name, type, or role.
 
+* `step_naomit()` removes observations (rows of data) if they contain NA or NaN values. We use `skip = TRUE` because we don't want to perform this part to new data so that the number of samples in the assessment set is the same as the number of predicted values (even if they are NA).
 
-* `step_naomit()` creates a specification of a recipe step that will remove observations (rows of data) if they contain NA or NaN values
+* `step_novel()` converts all nominal variables to factors.
 
-* `step_novel()` will convert all nominal variables to factors.
+* `step_dummy()` converts the factor columns into (one or more) numeric binary (0 and 1) variables.
 
-* `step_dummy()`: We then convert the factor columns into (one or more) numeric binary (0 and 1) variables for the levels of the training data.
+* `step_zv()`: removes any numeric variables that have zero variance.
 
-* `step_zv()`: We remove any numeric variables that have zero variance.
-
-* `step_normalize()`: We normalize (center and scale) the numeric variables (this is also called z-transformation). 
-
+* `step_corr()`: will remove variables that have large correlations with other variables.
 
 
 ```{r}
 
 housing_rec <-
-  recipe(median_house_value ~ ., data = new_train) %>%
-  update_role(longitude, 
-              latitude, 
+  recipe(median_house_value ~ ., data = train_data) %>%
+  update_role(longitude, latitude, 
               new_role = "ID") %>% 
   step_mutate(
     rooms_per_household = total_rooms/households,
-        bedrooms_per_room = total_bedrooms/total_rooms,
-        population_per_household = population/households
+    bedrooms_per_room = total_bedrooms/total_rooms,
+    population_per_household = population/households
     ) %>% 
   step_rm(total_rooms, total_bedrooms, population, households) %>% 
-  step_naomit(all_predictors()) %>% 
+  step_naomit(everything(), skip = TRUE) %>% 
   step_novel(all_nominal(), -all_outcomes()) %>%
   step_dummy(all_nominal()) %>%
-  step_zv(all_predictors()) %>%
-  step_normalize(all_predictors())
-  
+  step_zv(all_numeric(), -all_outcomes()) %>%
+  step_corr(all_predictors(), threshold = 0.7, method = "spearman") 
+
 ```
+
+
 
 To get the current set of variables and roles, use the `summary()` function:
 
@@ -382,36 +481,60 @@ summary(housing_rec)
 ```
 
 
-# Model building
+## Validation set
 
-To combine the data preparation with the model building, we use the package [workflows](https://workflows.tidymodels.org). 
+Remember that we already partitioned our data set into a training set and test. This lets us judge whether a given model will generalize well to new data. However, using only two partitions may be insufficient when doing many rounds of hyperparameter tuning. Therefore, it is a great idea to create a so called `validation set`. Watch this short [video from Google's Machine Learning crash course](https://developers.google.com/machine-learning/crash-course/validation/video-lecture) to learn more about the value of a validation set.  
 
-A workflow is an object that can bundle together your pre-processing, modeling, and post-processing requests. 
-
-## Specify linear model
-
-1. Pick a `model type` and set the `engine`: choose from this [list](https://www.tidymodels.org/find/parsnip/)
-2. Set the `mode`: regression or classification
+We use k-fold crossvalidation to build a set of 5 validation folds with the function `vfold_cv` (we also use stratified sampling in this example):
 
 ```{r}
-library(tidymodels)
 
-lm_spec <- # your model specification
-  linear_reg() %>%  # model type
-  set_engine(engine = "lm") %>%  # model engine
+set.seed(100)
+
+cv_folds <-
+ vfold_cv(train_data, 
+          v = 5, # number of folds
+          strata = median_house_value,
+          breaks = 4) 
+
+```
+
+We will come back to the validation set after we specified our models. 
+
+
+
+# Model building
+
+## Specify models
+
+We want to assess a few different models, including a regularized method (glmnet). The process is always as follows:
+
+1. Pick a `model type` and 
+2. set the `engine`: choose from this [list](https://www.tidymodels.org/find/parsnip/)
+3. Set the `mode`: regression or classification
+
+### Lasso regression 
+
+```{r}
+
+lasso_spec <- # your model specification
+  linear_reg(penalty = 0.1, mixture = 1) %>%  # model type
+  set_engine(engine = "glmnet") %>%  # model engine
   set_mode("regression") # model mode
 
 # Show your model specification
-lm_spec
+lasso_spec
 
 ```
 
 
-## Random forest
+### Random forest
 
 ```{r}
 
-rf_mod <- 
+library(ranger)
+
+rf_spec <- 
   rand_forest() %>% 
   set_engine("ranger") %>% 
   set_mode("regression")
@@ -419,13 +542,13 @@ rf_mod <-
 ```
 
 
-## Boosted tree (XGBoost)
+### Boosted tree (XGBoost)
 
 ```{r}
 
-#install.packages("xgboost")
+library(xgboost)
 
-xgb_mod <- 
+xgb_spec <- 
   boost_tree() %>% 
   set_engine("xgboost") %>% 
   set_mode("regression") 
@@ -433,117 +556,197 @@ xgb_mod <-
 ```
 
 
-# Create workflows
+## Create workflows
 
+
+To combine the data preparation with the model building, we use the package [workflows](https://workflows.tidymodels.org). A workflow is an object that can bundle together your pre-processing, modeling, and even post-processing requests. 
+
+
+### Lasso
+
+Note that we first need to normalize (z-standardize) the data in a Lasso model. We only need to perform this step for the Lasso regression and therefore just add this step to a new recipe we call `housing_rec_lasso`: 
 
 ```{r}
 
-lm_wflow <-
- workflow() %>%
- add_model(lm_spec) %>% 
- add_recipe(housing_rec)
+# We update the recipe for our Lasso regression
+housing_rec_lasso <- # create a new recipe object
+  housing_rec %>%  # use the recipe
+  step_normalize(all_numeric()) # add step_normalize
+
+lasso_wflow <- # new workflow object
+ workflow() %>% # use workflow function
+ add_recipe(housing_rec_lasso) %>%   # use the Lasso recipe
+ add_model(lasso_spec)   # add your model spec
+
 
 ```
 
+
+### Random forest
+
 ```{r}
 
-lm_wflow <-
+rf_wflow <-
  workflow() %>%
- add_model(lm_spec) %>% 
- add_recipe(housing_rec)
+ add_recipe(housing_rec) %>% # use the regular recipe
+ add_model(rf_spec) 
+
 
 ```
 
+
+### XGBoost
+
 ```{r}
 
-lm_wflow <-
+xgb_wflow <-
  workflow() %>%
- add_model(lm_spec) %>% 
- add_recipe(housing_rec)
+ add_recipe(housing_rec) %>% 
+ add_model(xgb_spec)
+
 
 ```
 
-## Evaluate models
+## Evaluate models on validation set
 
+Now we can use our validation set to estimate the performance of our models using the `fit_resamples()` function to fit the models on each of the 5 folds and store the results. 
 
+Note that `fit_resamples()` will fit our model to each resample and evaluate on the heldout set from each resample. The function is only used for computing performance metrics across some set of resamples to evaluate our models - the models are not even stored. However, in our example, we save the predictions in order to visualize the model fit and residuals with `control_resamples(save_pred = TRUE)`.
 
-Let's build a validation set to evaluate two simple linear regression models with different predictors. 
+Finally, we collect the performance metrics with `collect_metrics()` and pick the model that does best on the validation set.
 
-First of all, we build a set of 5 validation folds with the function `vfold_cv` (we also use stratified sampling in this example):
+### Lasso regression
+
 
 ```{r}
+
+# to save the predictions in order to visualize 
+# the model fit and residuals
+keep_pred <- control_resamples(save_pred = TRUE)
 
 set.seed(100)
 
-cv_folds <-
- vfold_cv(data_train, 
-          v = 5, 
-          strata = median_house_value,
-          breaks = 4) 
-
-cv_folds
-
+lasso_res <- # store the results 
+  lasso_wflow %>% # use workflow object
+  fit_resamples(resamples = cv_folds,
+                control = keep_pred
+    )
 ```
 
-Now we can fit the models and collect the performance metrics with `collect_metrics()`:
-# Model building
-
-
-## Evaluate models  
-
-We can use the set of resamples to estimate the performance of our two simple models using the `fit_resamples()` function to fit the models on each of the 5 folds and store the results as `lm_1_res` and `lm_2_res` respectively.
-
-`fit_resamples()` will fit our model to each resample and evaluate on the heldout set from each resample. The function is only used for computing performance metrics across some set of resamples to evaluate our models - the models are not stored. 
-
-
-## Evaluate models  
-
-We can use the set of resamples to estimate the performance of our two simple models using the `fit_resamples()` function to fit the models on each of the 5 folds and store the results as `lm_1_res` and `lm_2_res` respectively.
-
-`fit_resamples()` will fit our model to each resample and evaluate on the heldout set from each resample. The function is only used for computing performance metrics across some set of resamples to evaluate our models - the models are not stored. 
-
-## Fit model 1
+Show average performance over all folds:
 
 ```{r}
 
-lm_1_res <-
-  lm_spec %>% 
+lasso_res %>%  collect_metrics(summarize = TRUE)
+
+```
+
+Show performance for every single fold:
+
+```{r}
+
+lasso_res %>%  collect_metrics(summarize = FALSE)
+
+```
+
+To obtain the assessment set predictions:
+
+```{r}
+
+assess_res <- collect_predictions(lasso_res)
+
+```
+
+
+```{r}
+assess_res %>% 
+  ggplot(aes(x = median_house_value, y = .pred)) + 
+  geom_point(alpha = .15) +
+  geom_abline(col = "red") + 
+  coord_obs_pred() + 
+  ylab("Predicted")
+```
+
+There are two median house values in the training set that are significantly underpredicted by the model. Which districts are that?
+
+```{r}
+
+under_predicted <- 
+  assess_res %>% 
+  mutate(residual = median_house_value - .pred) %>% 
+  arrange(desc(abs(residual))) %>% 
+  slice_head(n = 2)
+
+under_predicted
+
+```
+
+```{r}
+
+cases_under_predicted <- 
+  train_data %>% 
+  dplyr::slice(under_predicted$.row) 
+
+```
+
+Let's find the two districts at the map: 
+
+```{r}
+
+qmplot(x = longitude, 
+       y = latitude, 
+       data = cases_under_predicted, 
+       geom = "point", 
+       color = "red",
+       zoom = 10) 
+
+```
+
+In our example, we don't further investigate the reasons for the underprediction. We just assume that the two districts are outliers. In a real projet, we would go back to our original data, remove the two cases and train the model again. 
+
+If we would do this, the new result would be as follows:
+
+
+
+### Random forest
+
+Here, we don't repeat all of the steps shown in Lasso regression and just focus on the performance metrics.
+
+```{r}
+
+rf_res <-
+  rf_wflow %>% 
   fit_resamples(
-    median_house_value ~ median_income, 
+    median_house_value ~ housing_median_age + rooms_per_household , 
     resamples = cv_folds
     )
 
-```
-
-## Fit model 2
-
-```{r}
-
-lm_2_res <-
-  lm_spec %>% 
-  fit_resamples(
-    median_house_value ~ total_rooms, 
-    resamples = cv_folds
-    )
+rf_res %>%  collect_metrics(summarize = TRUE)
 
 ```
 
-
+### XGBoost
 
 ```{r}
 
-
-lm_wflow_eval <- 
-  lm_wflow %>% 
+xgb_res <- 
+  xgb_wflow %>% 
   fit_resamples(
     median_house_value ~ ., 
     resamples = cv_folds
     ) 
 
-lm_wflow_eval%>% 
-    collect_metrics()
+xgb_res %>% collect_metrics(summarize = TRUE)
 
 ```
+
+
+### Compare models
+
+```{r}
+
+```
+
 
 
 # Last fit and evaluation 
