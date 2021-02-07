@@ -1,4 +1,3 @@
-
 # (PART) REGRESSION {-} 
 
 # Introduction {#intro}
@@ -20,6 +19,9 @@ library(GGally)
 library(ggmap)
 library(tidymodels)
 library(visdat)
+library(corrr)
+library(ggsignif)
+
 
 # The number of physical cores in the hardware:
 parallel::detectCores(logical = FALSE)
@@ -47,6 +49,7 @@ To use the code in this article, you will need to install the following packages
 * [skimr](https://cran.r-project.org/web/packages/skimr/vignettes/skimr.html) 
 * [GGally](https://ggobi.github.io/ggally/index.html)
 * [visdat](https://github.com/ropensci/visdat)
+* [corrr](https://corrr.tidymodels.org/)
 * [ggmap](https://github.com/dkahle/ggmap)
 
 ---
@@ -137,7 +140,9 @@ knitr::include_graphics("css/data-pipeline.png")
 In Data Understanding, you:
 
 - Import data 
-- Get an overview about the data structure
+- Get an overview about the data
+- Clean data
+- Format data properly
 - Split data into training and test set using stratified sampling
 - Discover and visualize the data to gain insights 
 :::
@@ -148,12 +153,14 @@ First of all, let's import the data:
 
 ```{r}
 
-LINK <- "https://raw.githubusercontent.com/kirenz/datasets/master/housing.csv"
+LINK <- "https://raw.githubusercontent.com/kirenz/datasets/master/housing_unclean.csv"
 housing_df <- read_csv(LINK)
 
 ```
 
 ## Data overview
+
+### Clean data
 
 Take a look at the top 4 rows of the DataFrame: 
 
@@ -163,7 +170,26 @@ head(housing_df, 4)
 
 ```
 
-Next, show the data structure:
+Notice the values in the first row of the variables `housing_median_age`and `median_house_value`. We need to remove the strings "years" and "$". Therefore, we use the function `str_remove_all` from the `stringr` package. Since there could be multiple wrong entries of the same type, we apply our corrections to all of the rows of the corresponding variable:
+
+```{r}
+
+housing_df <- 
+  housing_df %>% 
+  mutate(
+    housing_median_age = str_remove_all(housing_median_age, "[years]"),
+    median_house_value = str_remove_all(median_house_value, "[$]")
+  )
+
+```
+
+### Format data
+
+Next, we take a look at the data structure and check wether all data formats are correct:
+
+* Numeric variables should be in format as integers (`int`) or double precision (`dbl`)
+
+* Categorical (nominal and ordinal) variables should usually be formatted as factors (`fct`) and not characters (`chr`). Especially, if they don't have many levels.
 
 ```{r}
 
@@ -171,7 +197,7 @@ glimpse(housing_df)
 
 ```
 
-The package `visdat` helps explore the data class structure visualy:
+The package `visdat` helps explore the data class structure visually:
 
 ```{r}
 
@@ -179,7 +205,51 @@ vis_dat(housing_df)
 
 ```
 
-Missing data can be arranged by columns with most missingness: 
+We see that the numeric variables `housing_media_age` and `median_house_value` are declared as `chr` instead of `dbl`.
+
+Furthermore, the categorical variable `ocean_proximity` is formatted as character instead of factor. Let's take a look at the levels of the variable: 
+
+```{r}
+
+housing_df %>% 
+  count(ocean_proximity,
+        sort = TRUE)
+
+```
+
+The variable has only 5 levels and therefore should be formatted as a factor.
+
+Note that it is usually a good idea to first take care of the numerical variables. Afterwards, we can easily convert all remaining character variables to factors using the function `across` from the dplyr package.
+
+```{r}
+
+# convert to numeric
+housing_df <- 
+  housing_df %>% 
+  mutate(
+    housing_median_age = as.numeric(housing_median_age),
+    median_house_value = as.numeric(median_house_value)
+  )
+
+# convert all remaining character variables to factors 
+housing_df <- 
+  housing_df %>% 
+  mutate(across(where(is.character), as.factor))
+
+
+```
+
+Again, take a look at the data structure:
+
+```{r}
+
+glimpse(housing_df)
+
+```
+
+### Missing data
+
+Now let's turn our attention to missing data. Missing data can be viewed with the function `vis_miss` from the package `visdat`. We arrange the data by columns with most missingness: 
 
 ```{r}
 
@@ -187,7 +257,7 @@ vis_miss(housing_df, sort_miss = TRUE)
 
 ```
 
-Alternative method to obtain missing data: 
+Here an alternative method to obtain missing data: 
 
 ```{r}
 
@@ -195,14 +265,14 @@ is.na(housing_df) %>% colSums()
 
 ```
 
+We have a missing rate of 0.1% (207 cases) in our variable `total_bedroms`. This can cause problems for some algorithms. We will take care of this issue during our data preparation. 
 
-Note that we have a missing rate of 0.1% (207 cases) in our variable `total_bedroms` which can cause problems for some algorithms. We will take care of this issue in our data preparation. 
 
 ## Data splitting
 
 Before we get started with data exploration, let’s split our single dataset into two: a training set and a testing set. 
 
-We’ll keep most of the rows in the original dataset (subset chosen randomly) in the training set. The training data will be used to fit the model, and the testing set will be used to measure model performance.
+We’ll keep most of the rows in the original dataset in the training set. The training data will be used to fit models, and the testing set will be used to measure model performance.
 
 In our data split, we want to ensure that the training and test set is representative of the various categories of median house values in the whole dataset. Take a look at \@ref(fig:hist-med-value)
 
@@ -216,7 +286,7 @@ housing_df %>%
 ```
 
 
-In other words, we would like to have instances for each *stratum*, or else the estimate of a stratum's importance may be biased. A *stratum* (plural strata) refers to a subset (part) of the population (entire collection of items under consideration) which is being sampled. You should not have too many strata, and each stratum should be large enough. We use 4 strata in our example. 
+In general, we would like to have instances for each *stratum*, or else the estimate of a stratum's importance may be biased. A *stratum* (plural strata) refers to a subset (part) of the population (entire collection of items under consideration) which is being sampled. You should not have too many strata, and each stratum should be large enough. We use 4 strata in our example. 
 
 To actually split the data, we can use the `rsample` package (included in `tidymodels`) to create an object that contains the information on how to split the data (which we call `data_split`), and then two more `rsample` functions to create data frames for the training and testing sets:
 
@@ -241,15 +311,41 @@ test_data <- testing(data_split)
 
 ## Data exploration
 
-The point of data exploration is to gain insights that will help you select important variables for your model and to get ideas for feature engineering in the data preparation phase, where we prepare the data for learning algorithms. Ususally, data exploration is an iterative process: once you get a prototype model up and running, you can analyze its output to gain more insights and come back to this exploration step.
+The point of data exploration is to gain insights that will help you select important variables for your model and to get ideas for feature engineering in the data preparation phase, where we prepare the data for learning algorithms. Ususally, data exploration is an iterative process: once you get a prototype model up and running, you can analyze its output to gain more insights and come back to this exploration step. Note that we perform data exploration only with our training data.
 
-Now let's examine the training data in more detail. We first make a copy of the data, since we don't want to alter our training data during data exploration. 
+### Create data copy 
+
+We first make a copy of the training data since we don't want to alter our data during data exploration. 
 
 ```{r}
 
 data_explore <- train_data
 
 ```
+
+### Create new variables 
+
+One very important thing you may want to do at the beginning is to try out some new variable combinations. For example:
+
+* the *total number of rooms* in a district is not very useful if you don’t know how many households there are. What you really want is the *number of rooms per household*. 
+
+* Similarly, the total number of bedrooms by itself is not very useful: you probably want to compare it to the number of rooms. 
+
+* And the *population per household* also seems like an interesting attribute combination to look at. 
+
+Let’s create these new attributes before we begin with our data exploration:
+
+```{r}
+
+data_explore <- 
+  data_explore %>% 
+  mutate(rooms_per_household = total_rooms/households,
+        bedrooms_per_room = total_bedrooms/total_rooms,
+        population_per_household = population/households)
+
+```
+
+### Descriptive statistics 
 
 We obtain a data summary of numerical and categorical attributes using a function from the package `skimr`:
 
@@ -259,8 +355,11 @@ skim(data_explore)
 
 ```
 
+### Data exploration
 
-We start our visual data exploration with a geographical scatterplot of the data:
+#### Map
+
+Since our data includes information about longitude and latitude, we start our visual data exploration with the creation of a geographical  scatterplot of the data to get some first insights: 
 
 ```{r point-long-lat, fig.cap="Scatterplot of longitude and latitude", out.width='80%'}
 
@@ -313,33 +412,38 @@ qmplot(x = longitude,
 
 ```
 
+#### Variable relationships
 
-Now let's count the levels of our categorical variable `ocean_proximity` to get an overview about the variable:
+Next, we take a look at the relationships between our variables. In particular, we are interested in the relationships between our dependent variable `median_house_value` and all other variables. The gooal is to identify possible predictors which we could use in our models to predict the `median_house_value`.  
+
+
+We start our data exploration with a boxplot of our dependent variable to check, if we find differences in the median house value for the different levels of the categorical variable `ocean_proximity`. Additionally, we use the package `ggsignif` to calculate the significance of a difference between two of our groups and add the annotation to the plot in a single line.   
 
 ```{r}
+library(ggsignif)
 
 data_explore %>% 
-  count(ocean_proximity,
-        sort = TRUE)
-
+  ggplot(aes(ocean_proximity, median_house_value)) +
+  geom_boxplot(fill="#69b3a2") +
+  xlab("Ocean proximity") +
+  ylab("Median house value") +
+  geom_signif(comparisons = list(c("<1H OCEAN", "INLAND")), 
+               map_signif_level=TRUE) 
+  
 ```
 
+We can observe a difference in the median house value for the different levels of our categorical variable (except between NEAR BAY and NEAR OCEAN) why we should include this variable in our model. Furthermore, the difference between "<1H OCEAN" and "INLAND" is statistically significant.
 
-The function `ggscatmat` from the package `GGally` creates a matrix with scatterplots, densities and correlations for numeric columns. In our code, we enter the dataset `housing_df`, choose columns 6 to 9, a color column for our categorical variable `ocean_proximity`, and an alpha level of 0.8 (for transparency).
+
+The function `ggscatmat` from the package `GGally` creates a matrix with scatterplots, densities and correlations for numeric columns. In our code, we enter the dataset `housing_df`, choose columns 8 to 12, a color column for our categorical variable `ocean_proximity`, and an alpha level of 0.8 (for transparency).
 
 ```{r }
 
-ggscatmat(data_explore, columns = 6:9, color="ocean_proximity", alpha=0.8)
+data_explore %>% 
+ggscatmat(columns = 1:12, color="ocean_proximity", alpha=0.8)
 
 ```
 
-To obtain an overview of even more visualizations, we can use the function `ggpairs`:
-
-```{r }
-
-ggpairs(data_explore)
-
-```
 
 To plot only correlations of our numerical data, we can use `vis_cor`. We first use Pearson's correlation coefficient:
 
@@ -347,46 +451,73 @@ To plot only correlations of our numerical data, we can use `vis_cor`. We first 
 
 data_explore %>% 
   select(where(is.numeric)) %>% # only select numerical data
-  vis_cor(cor_method = "pearson")
+  vis_cor(cor_method = "pearson", na_action = "pairwise.complete.obs")
 
 ```
 
-Spearman's correlation coefficient:
+
+Compare the values with Spearman's correlation coefficient:
 
 ```{r}
 
 data_explore %>% 
   select(where(is.numeric)) %>% 
-  vis_cor(cor_method = "spearman")
+  vis_cor(cor_method = "spearman", na_action = "pairwise.complete.obs")
 
 ```
 
-
-One important thing you may want to do before preparing the data for algorithms is to try out some variable combinations. For example, the *total number of rooms* in a district is not very useful if you don’t know how many households there are. What you really want is the *number of rooms per household*. Similarly, the total number of bedrooms by itself is not very useful: you probably want to compare it to the number of rooms. And the *population per household* also seems like an interesting attribute combination to look at. Let’s create these new attributes:
-
-```{r}
-
-data_explore <- 
-  data_explore %>% 
-  mutate(rooms_per_household = total_rooms/households,
-        bedrooms_per_room = total_bedrooms/total_rooms,
-        population_per_household = population/households)
-
-```
-
-And now let’s look at the correlations again:
+Now we take a closer look at the correlation coefficients with the package `corrr`. 
 
 ```{r}
 
-data_explore %>% 
+library(corrr)
+
+# calculate all correlations
+cor_res <- 
+  data_explore %>%
   select(where(is.numeric)) %>% 
-  vis_cor(cor_method = "spearman")
+  correlate(method = "spearman",
+            use = "pairwise.complete.obs") 
 
+# show correlations
+cor_res %>% 
+  select(term, median_house_value) %>% 
+  filter(!is.na(median_house_value)) %>% # focus on dependent variable 
+  arrange(median_house_value) %>% # sort values
+  fashion() # print tidy correlations
+  
 ```
 
-Note that the new `bedrooms_per_room` attribute is more correlated with the median house value than the total number of rooms or bedrooms. Apparently houses with a lower bedroom/room ratio tend to be more expensive. The number of rooms per household is also more informative than the total number of rooms in a district —obviously the larger the houses, the more expensive they are.
+Show network plot:
+
+```{r}
+
+data_explore %>%
+  select(where(is.numeric)) %>%  
+  correlate() %>% 
+  network_plot(min_cor = .15)
+```
 
 
+Summary of some findings: 
+
+* `median_income` has a strong positive correlation with median house value.
+
+* the new `bedrooms_per_room` attribute is more correlated (negatively) with the median house value than the total number of rooms or bedrooms. Apparently houses with a lower bedroom/room ratio tend to be more expensive. 
+
+* `rooms_per_household` is also a bit more informative than the total number of rooms in a district —obviously the larger the houses, the more expensive they are.
+
+* `population_per_household` is also correlated with our dependent variable.
+
+We could also use the function `cor.test()` to calculate the statistical significance of Spearman's rank correlation between the variables:
+
+```{r}
+
+cor.test(data_explore$median_house_value, data_explore$population_per_household, method = "spearman")
+```
+
+
+Consequently we will only use this four variables as well as `ocean_proximity` as predictors in our model.
 
 # Data preparation
 
@@ -417,6 +548,37 @@ aggregate features into promising new features.
 
 We will want to use our recipe across several steps as we train and test our models. To simplify this process, we can use a *model workflow*, which pairs a model and recipe together. 
 
+## Data preparation
+
+First we insert our new variables in the data and drop the variables we will note use in the model. We keep `longitude` and `latitude` to be able to map the data in a later stage. Furthermore, we make a new split. 
+
+```{r}
+set.seed(123)
+
+housing_df_new <-
+  housing_df %>% 
+   mutate(
+     rooms_per_household = total_rooms/households,
+     bedrooms_per_room = total_bedrooms/total_rooms,
+     population_per_household = population/households) %>% 
+  select(-total_rooms, -total_bedrooms, -housing_median_age,
+         -households, -population)
+
+glimpse(housing_df_new)
+
+
+# Put 3/4 of the data into the training set 
+data_split <- initial_split(housing_df_new, 
+                           prop = 3/4, 
+                           strata = median_house_value, 
+                           breaks = 4)
+
+# Create dataframes for the two sets:
+train_data <- training(data_split) 
+test_data <- testing(data_split)
+
+```
+
 
 ## Data prepropecessing recipe 
 
@@ -431,13 +593,9 @@ Let’s create a `recipe` for our regression models (Lasso, Random Forest, XGBoo
 
 * `update_role()`: This step of adding roles to a recipe is optional; the purpose of using it here is that those two variables can be retained in the data but not included in the model. This can be convenient when, after the model is fit, we want to investigate some poorly predicted value. These ID columns will be available and can be used to try to understand what went wrong. 
 
-* `step_mutate()` adds new variables.
-
-* `step_rm()` removes variables based on their name, type, or role.
-
 * `step_naomit()` removes observations (rows of data) if they contain NA or NaN values. We use `skip = TRUE` because we don't want to perform this part to new data so that the number of samples in the assessment set is the same as the number of predicted values (even if they are NA).
 
-* `step_novel()` converts all nominal variables to factors.
+* `step_novel()` converts all nominal variables to factors and take cares of other issues related to categorical variables.
 
 * `step_dummy()` converts the factor columns into (one or more) numeric binary (0 and 1) variables.
 
@@ -449,15 +607,13 @@ Let’s create a `recipe` for our regression models (Lasso, Random Forest, XGBoo
 ```{r}
 
 housing_rec <-
-  recipe(median_house_value ~ ., data = train_data) %>%
+  recipe(median_house_value ~ .,
+         data = train_data) %>%
   update_role(longitude, latitude, 
               new_role = "ID") %>% 
   step_mutate(
-    rooms_per_household = total_rooms/households,
-    bedrooms_per_room = total_bedrooms/total_rooms,
-    population_per_household = population/households
+    
     ) %>% 
-  step_rm(total_rooms, total_bedrooms, population, households) %>% 
   step_naomit(everything(), skip = TRUE) %>% 
   step_novel(all_nominal(), -all_outcomes()) %>%
   step_dummy(all_nominal()) %>%
@@ -520,6 +676,26 @@ lasso_spec
 
 ```
 
+* `penalty`: The total amount of regularization in the model. 
+
+* `mixture`: The mixture amounts of different types of regularization. A number between zero and one (inclusive) that is the proportion of L1 regularization (i.e. lasso) in the model. When mixture = 1, it is a pure lasso model while mixture = 0 indicates that ridge regression is being used. (glmnet and spark only).
+
+Note that for the lasso regression to work properly we need to add a data normalization step. We will update our recipe at a later step (when we create the workflows).
+
+### Natural spline  
+
+
+```{r}
+
+spline_spec <- 
+  linear_reg() %>%  
+  set_engine(engine = "lm") %>%  
+  set_mode("regression")
+
+```
+
+To use this model correctly, we need to add a data normalization step as well as a step to declare the number of freedoms in our model. We will update our recipe at a later step (when we create the workflows).
+
 
 ### Random forest
 
@@ -545,6 +721,17 @@ xgb_spec <-
 
 ```
 
+### K-nearest neighbour   
+
+```{r}
+
+knn_spec
+  nearest_neighbor() %>% 
+  set_engine("kknn") %>% 
+  set_mode("regression") 
+
+```
+
 
 ## Create workflows
 
@@ -552,11 +739,11 @@ To combine the data preparation recipe with the model building, we use the packa
 
 ### Lasso
 
-Note that we first need to normalize (z-standardize) the data in a Lasso model. We only need to perform this step for the Lasso regression model and therefore just add this step to a new recipe we call `housing_rec_lasso`: 
+Note that we first need to normalize (z-standardize) the data for our Lasso model. We only need to perform this step for some models and therefore just add this step to a new recipe we call `housing_rec_lasso`: 
 
 ```{r}
 
-# update the recipe for Lasso 
+# chnage the recipe for Lasso 
 housing_rec_lasso <- # create a new recipe object
   housing_rec %>%  # use the old recipe
   step_normalize(all_numeric(), -all_outcomes()) # add the step_normalize
@@ -569,6 +756,28 @@ lasso_wflow <- # new workflow object
 
 ```
 
+### Natural spline
+
+Note that we first need to normalize (z-standardize) the data for a natural spline model. Furthermore, we need to declare the degrees of freedom (in `step_ns()`).
+
+```{r}
+
+library(splines)
+
+# change the recipe for natural spline 
+housing_rec_spline <- # create a new recipe object
+  housing_rec %>%  # use the old recipe
+  step_normalize(all_numeric(), -all_outcomes()) %>% 
+  step_ns(median_income, deg_free = 3) %>% 
+  step_ns(bedrooms_per_room, deg_free = 3) 
+
+# bundle recipe and model
+lasso_wflow <- # new workflow object
+ workflow() %>% # use workflow function
+ add_recipe(housing_rec_spline) %>%   # use the Lasso recipe
+ add_model(spline_spec)   # add your model spec
+
+```
 
 ### Random forest
 
