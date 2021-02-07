@@ -236,7 +236,6 @@ housing_df <-
   housing_df %>% 
   mutate(across(where(is.character), as.factor))
 
-
 ```
 
 Again, take a look at the data structure:
@@ -434,8 +433,7 @@ data_explore %>%
 
 We can observe a difference in the median house value for the different levels of our categorical variable (except between NEAR BAY and NEAR OCEAN) why we should include this variable in our model. Furthermore, the difference between "<1H OCEAN" and "INLAND" is statistically significant.
 
-
-The function `ggscatmat` from the package `GGally` creates a matrix with scatterplots, densities and correlations for numeric columns. In our code, we enter the dataset `housing_df`, choose columns 8 to 12, a color column for our categorical variable `ocean_proximity`, and an alpha level of 0.8 (for transparency).
+Now let's analyze the numerical variables: The function `ggscatmat` from the package `GGally` creates a matrix with scatterplots, densities and correlations for numeric columns. In our code, we enter the dataset `housing_df`, choose columns 8 to 12, a color column for our categorical variable `ocean_proximity`, and an alpha level of 0.8 (for transparency).
 
 ```{r }
 
@@ -488,7 +486,14 @@ cor_res %>%
   
 ```
 
-Show network plot:
+We could also use the function `cor.test()` to calculate the statistical significance of Spearman's rank correlations between the variables. As an example, we calculate the p-value for `median_house_value` and `population_per_household`:
+
+```{r}
+
+cor.test(data_explore$median_house_value, data_explore$population_per_household, method = "spearman")
+```
+
+The function `network_plot` outputs a network plot of a correlation data frame in which variables that are more highly correlated appear closer together and are joined by stronger paths. Paths are also colored by their sign (blue for positive and red for negative). The proximity of the points are determined using multidimensional clustering:
 
 ```{r}
 
@@ -496,10 +501,11 @@ data_explore %>%
   select(where(is.numeric)) %>%  
   correlate() %>% 
   network_plot(min_cor = .15)
+
 ```
 
 
-Summary of some findings: 
+Summary of our findings for the numerical variables: 
 
 * `median_income` has a strong positive correlation with median house value.
 
@@ -509,15 +515,7 @@ Summary of some findings:
 
 * `population_per_household` is also correlated with our dependent variable.
 
-We could also use the function `cor.test()` to calculate the statistical significance of Spearman's rank correlation between the variables:
-
-```{r}
-
-cor.test(data_explore$median_house_value, data_explore$population_per_household, method = "spearman")
-```
-
-
-Consequently we will only use this four variables as well as `ocean_proximity` as predictors in our model.
+Consequently we will use this four numerical variables as well as `ocean_proximity` as predictors in our model.
 
 # Data preparation
 
@@ -534,7 +532,9 @@ Data preparation:
 :::
 
 
-Next, we’ll preprocess our data before training models. Therefore, we mainly use the tidymodels packages `recipes`. `Recipes` are built as a series of optional data preparation steps, such as:
+Next, we’ll preprocess our data before training models. Therefore, we mainly use the tidymodels packages `recipes` and `workflows`. 
+
+`Recipes` are built as a series of optional data preparation steps, such as:
 
 * *Data cleaning*: Fix or remove outliers, fill in missing values (e.g., with zero, mean, median…) or drop their rows (or columns).
 
@@ -545,15 +545,13 @@ aggregate features into promising new features.
 
 * *Feature scaling*: Standardize or normalize features.
 
-
 We will want to use our recipe across several steps as we train and test our models. To simplify this process, we can use a *model workflow*, which pairs a model and recipe together. 
 
 ## Data preparation
 
-First we insert our new variables in the data and drop the variables we will note use in the model. We keep `longitude` and `latitude` to be able to map the data in a later stage. Furthermore, we make a new split. 
+Before we create our `recipes`, we first add our new variables and only select the variables which  we will use in the model. Note that we keep `longitude` and `latitude` to be able to map the data in a later stage. 
 
 ```{r}
-set.seed(123)
 
 housing_df_new <-
   housing_df %>% 
@@ -561,11 +559,21 @@ housing_df_new <-
      rooms_per_household = total_rooms/households,
      bedrooms_per_room = total_bedrooms/total_rooms,
      population_per_household = population/households) %>% 
-  select(-total_rooms, -total_bedrooms, -housing_median_age,
-         -households, -population)
+  select(
+    longitude, latitude, median_house_value, 
+    median_income, ocean_proximity, 
+    bedrooms_per_room, rooms_per_household, population_per_household
+         )
 
 glimpse(housing_df_new)
 
+
+```
+
+Furthermore, we need to make a new data split since we changed the data. 
+
+```{r}
+set.seed(123)
 
 # Put 3/4 of the data into the training set 
 data_split <- initial_split(housing_df_new, 
@@ -579,15 +587,14 @@ test_data <- testing(data_split)
 
 ```
 
-
 ## Data prepropecessing recipe 
 
-The type of data preprocessing is dependent on the type of model being fit. The excellent book "Tidy Modeling with R" provides an [appendix with recommendations for baseline levels of preprocessing](https://www.tmwr.org/pre-proc-table.html) that are needed for various model functions. 
+In general, the type of data preprocessing is dependent on the type of model being fit. The excellent book "Tidy Modeling with R" provides an [appendix with recommendations for baseline levels of preprocessing](https://www.tmwr.org/pre-proc-table.html) that are needed for various model functions. 
 
-Let’s create a `recipe` for our regression models (Lasso, Random Forest, XGBoost):
+Let’s create a base `recipe` for all of our regression models (lasso, natural spline, random forest, XGBoost, k-nearest neighbor):
 
 * The `recipe()` function has two arguments: 
- * *A formula*. Any variable on the left-hand side of the tilde (`~`) is considered the model outcome (here, `median_house_value`). On the right-hand side of the tilde are the predictors. Variables may be listed by name, or you can use the dot (`.`) to indicate all other variables as predictors. 
+ * *A formula*. Any variable on the left-hand side of the tilde (`~`) is considered the model outcome (here, `median_house_value`). On the right-hand side of the tilde are the predictors. Variables may be listed by name (separated by a `+`), or you can use the dot (`.`) to indicate all other variables as predictors. 
  * *The data*. A recipe is associated with the data set used to create the model. This will typically be the training set, so `data = train_data` here. 
 
 
@@ -595,13 +602,13 @@ Let’s create a `recipe` for our regression models (Lasso, Random Forest, XGBoo
 
 * `step_naomit()` removes observations (rows of data) if they contain NA or NaN values. We use `skip = TRUE` because we don't want to perform this part to new data so that the number of samples in the assessment set is the same as the number of predicted values (even if they are NA).
 
-* `step_novel()` converts all nominal variables to factors and take cares of other issues related to categorical variables.
+* `step_novel()` converts all nominal variables to factors and takes care of other issues related to categorical variables.
 
 * `step_dummy()` converts the factor columns into (one or more) numeric binary (0 and 1) variables.
 
 * `step_zv()`: removes any numeric variables that have zero variance.
 
-* `step_corr()`: will remove variables that have large correlations with other variables.
+* `step_corr()`: will remove predictor variables that have large correlations with other predictor variables.
 
 
 ```{r}
@@ -634,7 +641,7 @@ summary(housing_rec)
 
 ## Validation set
 
-Remember that we already partitioned our data set into a training set and test. This lets us judge whether a given model will generalize well to new data. However, using only two partitions may be insufficient when doing many rounds of hyperparameter tuning. Therefore, it is a great idea to create a so called `validation set`. Watch this short [video from Google's Machine Learning crash course](https://developers.google.com/machine-learning/crash-course/validation/video-lecture) to learn more about the value of a validation set.  
+Remember that we already partitioned our data set into a training set and test set. This lets us judge whether a given model will generalize well to new data. However, using only two partitions may be insufficient when doing many rounds of hyperparameter tuning (which we don't perform in this tutorial). Therefore, it is usually a good idea to create a so called `validation set`. Watch this short [video from Google's Machine Learning crash course](https://developers.google.com/machine-learning/crash-course/validation/video-lecture) to learn more about the value of a validation set.  
 
 We use k-fold crossvalidation to build a set of 5 validation folds with the function `vfold_cv` (we also use stratified sampling in this example):
 
@@ -656,11 +663,13 @@ We will come back to the validation set after we specified our models.
 
 ## Specify models
 
-We want to assess three different models. The process is always as follows:
+The process of specifying our models is always as follows:
 
 1. Pick a `model type` 
-2. set the `engine`: choose from this [list](https://www.tidymodels.org/find/parsnip/)
+2. set the `engine`
 3. Set the `mode`: regression or classification
+
+You can choose the `model type` and `engine` from this [list](https://www.tidymodels.org/find/parsnip/)
 
 ### Lasso regression 
 
@@ -676,14 +685,13 @@ lasso_spec
 
 ```
 
-* `penalty`: The total amount of regularization in the model. 
+* `penalty`: The total amount of regularization in the model. Higher values imply a higher penalty. 
 
 * `mixture`: The mixture amounts of different types of regularization. A number between zero and one (inclusive) that is the proportion of L1 regularization (i.e. lasso) in the model. When mixture = 1, it is a pure lasso model while mixture = 0 indicates that ridge regression is being used. (glmnet and spark only).
 
 Note that for the lasso regression to work properly we need to add a data normalization step. We will update our recipe at a later step (when we create the workflows).
 
 ### Natural spline  
-
 
 ```{r}
 
@@ -694,8 +702,7 @@ spline_spec <-
 
 ```
 
-To use this model correctly, we need to add a data normalization step as well as a step to declare the number of freedoms in our model. We will update our recipe at a later step (when we create the workflows).
-
+To use this model correctly, we also need to add a data normalization step as well as a step to declare the degree of freedom in our model. We will update our recipe at a later step (when we create the workflows).
 
 ### Random forest
 
@@ -721,16 +728,17 @@ xgb_spec <-
 
 ```
 
-### K-nearest neighbour   
+### K-nearest neighbor   
 
 ```{r}
 
-knn_spec
+knn_spec <- 
   nearest_neighbor() %>% 
   set_engine("kknn") %>% 
   set_mode("regression") 
 
 ```
+
 
 
 ## Create workflows
@@ -739,45 +747,53 @@ To combine the data preparation recipe with the model building, we use the packa
 
 ### Lasso
 
-Note that we first need to normalize (z-standardize) the data for our Lasso model. We only need to perform this step for some models and therefore just add this step to a new recipe we call `housing_rec_lasso`: 
+Note that we first need to normalize (z-standardize) the data for our lasso model. We just update our base recipe and add this step to a new recipe we call `housing_rec_lasso`: 
 
 ```{r}
 
-# chnage the recipe for Lasso 
 housing_rec_lasso <- # create a new recipe object
   housing_rec %>%  # use the old recipe
   step_normalize(all_numeric(), -all_outcomes()) # add the step_normalize
 
-# bundle recipe and model
+```
+
+Bundle recipe and model with `workflows`:
+
+```{r}
+
 lasso_wflow <- # new workflow object
  workflow() %>% # use workflow function
- add_recipe(housing_rec_lasso) %>%   # use the Lasso recipe
+ add_recipe(housing_rec_lasso) %>%   # use the new recipe
  add_model(lasso_spec)   # add your model spec
 
 ```
 
+
 ### Natural spline
 
-Note that we first need to normalize (z-standardize) the data for a natural spline model. Furthermore, we need to declare the degrees of freedom (in `step_ns()`).
+Note that we also first need to normalize (z-standardize) the data for a natural spline model. Furthermore, we need to declare the degrees of freedom (in `step_ns()`). In our example, we use the 
+
+```{r}
+library(splines)
+
+housing_rec_spline <- 
+  housing_rec %>%  
+  step_normalize(all_numeric(), -all_outcomes()) %>% 
+  step_ns(all_predictors(), deg_free = 3) # natural spline
+
+```
+
+Bundle recipe and model:
 
 ```{r}
 
-library(splines)
-
-# change the recipe for natural spline 
-housing_rec_spline <- # create a new recipe object
-  housing_rec %>%  # use the old recipe
-  step_normalize(all_numeric(), -all_outcomes()) %>% 
-  step_ns(median_income, deg_free = 3) %>% 
-  step_ns(bedrooms_per_room, deg_free = 3) 
-
-# bundle recipe and model
-lasso_wflow <- # new workflow object
- workflow() %>% # use workflow function
- add_recipe(housing_rec_spline) %>%   # use the Lasso recipe
- add_model(spline_spec)   # add your model spec
+spline_wflow <- 
+ workflow() %>% 
+ add_recipe(housing_rec_spline) %>%   # use the spline recipe
+ add_model(spline_spec) 
 
 ```
+
 
 ### Random forest
 
@@ -800,6 +816,28 @@ xgb_wflow <-
  add_recipe(housing_rec) %>% 
  add_model(xgb_spec)
 
+```
+
+### K -nearest neighbor
+
+Note that we first need to normalize (z-standardize) the data for our model. 
+
+```{r}
+
+housing_rec_knn <- 
+  housing_rec %>%  
+  step_normalize(all_numeric(), -all_outcomes()) 
+
+```
+
+Bundle recipe and model:
+
+```{r}
+
+knn_wflow <-
+ workflow() %>%
+ add_recipe(housing_rec_knn) %>% 
+ add_model(xgb_spec)
 
 ```
 
@@ -818,15 +856,12 @@ Finally, we collect the performance metrics with `collect_metrics()` and pick th
 
 set.seed(100)
 
-# to save the predictions in order to visualize 
-# the model fit and residuals
-keep_pred <- control_resamples(save_pred = TRUE)
-
-
-lasso_res <- # store the results 
+lasso_res <- 
   lasso_wflow %>% # use workflow object
   fit_resamples(resamples = cv_folds,
-                control = keep_pred
+                control = control_resamples(save_pred = TRUE)
+                # to save the predictions in order to visualize 
+                # the model fit and residuals
     )
 
 ```
@@ -901,20 +936,34 @@ qmplot(x = longitude,
 
 In this tutorial, we don't further investigate the reasons for the underprediction. In a real projet, we would go back to our original data, eventually remove the two cases and train the model again. 
 
-If we would do this, the new result would be as follows:
 
+### Natural spline
+
+Here, we don't repeat all of the steps shown in lasso regression and just focus on the performance metrics.
+
+```{r}
+
+spline_res <-
+  spline_wflow %>% 
+  fit_resamples(
+    resamples = cv_folds,
+    control = control_resamples(save_pred = TRUE)
+    )
+
+spline_res %>%  collect_metrics(summarize = TRUE)
+
+```
 
 ### Random forest
 
-Here, we don't repeat all of the steps shown in Lasso regression and just focus on the performance metrics.
 
 ```{r}
 
 rf_res <-
   rf_wflow %>% 
   fit_resamples(
-    median_house_value ~ housing_median_age + rooms_per_household , 
-    resamples = cv_folds
+    resamples = cv_folds,
+    control = control_resamples(save_pred = TRUE)
     )
 
 rf_res %>%  collect_metrics(summarize = TRUE)
@@ -928,11 +977,27 @@ rf_res %>%  collect_metrics(summarize = TRUE)
 xgb_res <- 
   xgb_wflow %>% 
   fit_resamples(
-    median_house_value ~ ., 
-    resamples = cv_folds
+    resamples = cv_folds,
+    control = control_resamples(save_pred = TRUE)
     ) 
 
 xgb_res %>% collect_metrics(summarize = TRUE)
+
+```
+
+
+### K-nearest neighbor
+
+```{r}
+
+knn_res <- 
+  knn_wflow %>% 
+  fit_resamples(
+    resamples = cv_folds,
+    control = control_resamples(save_pred = TRUE)
+    ) 
+
+knn_res %>% collect_metrics(summarize = TRUE)
 
 ```
 
@@ -949,6 +1014,12 @@ lasso_rmse <-
   rename(rmse = mean) %>% 
   mutate(model = "lasso")
 
+spline_rmse <- 
+  spline_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  rename(rmse = mean) %>% 
+  mutate(model = "spline")
+
 rf_rmse <- 
   rf_res %>% 
   collect_metrics(summarise = TRUE) %>%
@@ -961,27 +1032,39 @@ xgb_rmse <-
   rename(rmse = mean) %>% 
   mutate(model = "XGBoost")
 
+knn_rmse <- 
+  knn_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  rename(rmse = mean) %>% 
+  mutate(model = "Knn")
+
 # create dataframe with all models
 model_compare <- bind_rows(lasso_rmse,
+                           spline_rmse,
                            rf_rmse,
-                           xgb_rmse) 
+                           xgb_rmse,
+                           knn_rmse) 
 
 # show all models
-model_compare
-
-# find minmum rmse
 model_compare %>% 
-  filter(.metric== "rmse") %>% 
-  select(model, rmse, std_err) %>% 
-  slice_min(rmse)
+  select(model, .metric, rmse, std_err)
 
 ```
 
 
+```{r}
+# find minimum rmse
+model_compare %>% 
+  filter(.metric== "rmse") %>% 
+  select(model, rmse, std_err) %>% 
+  slice_min(rmse)
+```
+
+Now it's time to fit the best model (in our case the XGBoost model) one last time to the full training set and evaluate the resulting final model on the test set.
 
 # Last fit and evaluation 
 
-Now it's time to fit the best model (in our case the XGBoost model) one last time to the full training set and evaluate the resulting final model on the test set. Tidymodels provides the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html) which does all of the described steps for us. We just need to provide the workflow object of the best model as well as the data split object (not the training data).
+Tidymodels provides the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html) which fits a model to the training data and evaluates it on the test set. We just need to provide the workflow object of the best model as well as the data split object (not the training data).
 
 
 ```{r}
