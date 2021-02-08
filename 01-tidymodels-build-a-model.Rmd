@@ -623,9 +623,12 @@ housing_df_new <-
   housing_df %>% 
   filter(median_house_value < 500000) %>% 
   select(
-    longitude, latitude, median_house_value, 
-    median_income, ocean_proximity, 
-    bedrooms_per_room, rooms_per_household, 
+    longitude, latitude, 
+    median_house_value, 
+    median_income, 
+    ocean_proximity, 
+    bedrooms_per_room, 
+    rooms_per_household, 
     population_per_household
          )
 
@@ -702,14 +705,6 @@ housing_rec <-
 
 ```
 
-```{r}
-# only if we would like to take a look at 
-# the result of all of the data preprocessing 
-
-processed_data <- prep(housing_rec) # perform recipe on training data
-juice(processed_data) # show preprocessed data
-```
-
 
 To view the current set of variables and roles, use the `summary()` function:
 
@@ -718,6 +713,21 @@ To view the current set of variables and roles, use the `summary()` function:
 summary(housing_rec)
 
 ```
+
+This next step is not necessary but if we would like to check if all of the preprocessing steps above actually work, we can proceed as follows to take a look at the data:
+
+```{r}
+# only if we would like to take a look at 
+# the result of all of the data preprocessing 
+
+# prep() performs the recipe on training data
+prepped_recipe <- prep(housing_rec) 
+
+# juice() extracts the data from the 
+juice(prepped_recipe) # show preprocessed data
+
+```
+Looks fine so far.
 
 
 ## Validation set
@@ -814,7 +824,7 @@ xgb_spec <-
 ```{r}
 
 knn_spec <- 
-  nearest_neighbor(neighbors = 6) %>% 
+  nearest_neighbor(neighbors = 4) %>% 
   set_engine("kknn") %>% 
   set_mode("regression") 
 
@@ -900,7 +910,7 @@ Bundle recipe and model:
 knn_wflow <-
  workflow() %>%
  add_recipe(housing_rec) %>% 
- add_model(xgb_spec)
+ add_model(knn_spec)
 
 ```
 
@@ -945,7 +955,7 @@ lasso_res %>%  collect_metrics(summarize = FALSE)
 
 ```
 
-To obtain the assessment set predictions:
+To assess the model predictions, we plot the predictions on the y-axis and the real median house value at the x-axis. This means if our model would have made no mistakes, all points would lie on the red diagonal line. 
 
 ```{r}
 
@@ -978,8 +988,7 @@ Show the observation in the training data.
 
 ```{r}
 
-case_wrong_predicted <- 
-  train_data %>% 
+train_data %>% 
   dplyr::slice(wrongest_prediction$.row) 
 
 ```
@@ -1020,6 +1029,7 @@ rf_res %>%  collect_metrics(summarize = TRUE)
 
 ```
 
+
 ### XGBoost
 
 ```{r}
@@ -1034,6 +1044,7 @@ xgb_res <-
 xgb_res %>% collect_metrics(summarize = TRUE)
 
 ```
+
 
 
 ### K-nearest neighbor
@@ -1051,7 +1062,6 @@ knn_res %>% collect_metrics(summarize = TRUE)
 
 ```
 
-
 ### Compare models
 
 Extract the RMSE from our models to compare them:
@@ -1061,31 +1071,26 @@ Extract the RMSE from our models to compare them:
 lasso_rmse <- 
   lasso_res %>% 
   collect_metrics(summarise = TRUE) %>%
-  rename(rmse = mean) %>% 
   mutate(model = "lasso")
 
 spline_rmse <- 
   spline_res %>% 
   collect_metrics(summarise = TRUE) %>%
-  rename(rmse = mean) %>% 
   mutate(model = "spline")
 
 rf_rmse <- 
   rf_res %>% 
   collect_metrics(summarise = TRUE) %>%
-  rename(rmse = mean) %>% 
   mutate(model = "random forest")
 
 xgb_rmse <- 
   xgb_res %>% 
   collect_metrics(summarise = TRUE) %>%
-  rename(rmse = mean) %>% 
   mutate(model = "XGBoost")
 
 knn_rmse <- 
   knn_res %>% 
   collect_metrics(summarise = TRUE) %>%
-  rename(rmse = mean) %>% 
   mutate(model = "Knn")
 
 # create dataframe with all models
@@ -1095,19 +1100,35 @@ model_compare <- bind_rows(lasso_rmse,
                            xgb_rmse,
                            knn_rmse) 
 
-# show all models
-model_compare %>% 
-  select(model, .metric, rmse, std_err)
+# change data structure
+model_comp <- 
+  model_compare %>% 
+  select(model, .metric, mean, std_err) %>% 
+  pivot_wider(names_from = .metric, values_from = c(mean, std_err)) 
 
+# show rmse 
+model_comp %>% 
+  arrange(mean_rmse) %>% 
+  mutate(model = fct_reorder(model, mean_rmse)) %>%
+  ggplot(aes(model, mean_rmse, fill=model)) +
+  geom_col() +
+  scale_fill_brewer(palette = "Blues")
+
+# show rsq 
+model_comp %>% 
+  arrange(mean_rsq) %>% 
+  mutate(model = fct_reorder(model, desc(mean_rsq))) %>%
+  ggplot(aes(model, mean_rsq, fill=model)) +
+  geom_col() +
+  scale_fill_brewer(palette = "Blues")
+  
 ```
-
+Note that the model results are quite similar. 
 
 ```{r}
 # find minimum rmse
-model_compare %>% 
-  filter(.metric== "rmse") %>% 
-  select(model, rmse, std_err) %>% 
-  slice_min(rmse)
+model_comp %>% 
+  slice_min(mean_rmse)
 ```
 
 Now it's time to fit the best model (in our case the XGBoost model) one last time to the full training set and evaluate the resulting final model on the test set.
