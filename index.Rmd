@@ -1,12 +1,12 @@
 --- 
 knit: "bookdown::render_book"
-title: "Introduction to Tidymodels"
+title: "Introduction to Regression and Classification with Tidymodels"
 author: "Jan Kirenz"
 date: "`r Sys.Date()`"
 github-repo: kirenz/tidymodels
 site: bookdown::bookdown_site
 documentclass: book
-description: "The course Data Science Basics contains materials to learn data acquisition and wrangling, exploratory data analysis, data visualization, inference, modelling, and effective communication of results using the programming language R."
+description: "This book contains materials to build regression and classification models using the tidymodels framework in the programming language R."
 bibliography: [book.bib, packages.bib]
 biblio-style: apalike
 link-citations: yes
@@ -15,17 +15,25 @@ link-citations: yes
 
 # Welcome {.unnumbered}
 
-This course contains materials to learn data acquisition and wrangling, exploratory data analysis, data visualization, inference, modelling, and effective communication of results using the programming language R.
+In this book we'll cover the  [`tidymodels`](https://www.tidymodels.org/) framework, which is a collection of packages for modeling and machine learning using [tidyverse](https://www.tidyverse.org/) principles to build regression and classification models. Furthermore, we follow the data science lifecycle process proposed by @Wirth2000:
 
-The goal of this course is to enable students to work on a fully reproducible data science project analysing a dataset of their choice and answering questions they care about.
+
+```{r crisp, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Cross Industry Standard Process for Data Mining (@Wirth2000)}
+
+knitr::include_graphics("css/CRISP-DM.png")
+
+```
+
+To learn more about this framework, review this [presentation about the CRISP-DM](https://docs.google.com/presentation/d/1Y_6d-yv0Wq9WQvWkYS64KYkcSoswewm-7t2jfSz3aT4/edit?usp=sharing). 
+
 
 ## License {.unnumbered}
 
 <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/"><img src="https://licensebuttons.net/l/by-sa/4.0/88x31.png" alt="Creative Commons License" style="border-width:0"/></a><br />This online work is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 Internationale</a>.
-Visit [here](https://github.com/rstudio-education/datascience-box/blob/master/LICENSE.md) for more information about the license.
+
 
 ## Acknowledements {.unnumbered}
 
-This introductory data science course is based on Mine Çetinkaya-Rundel's excellent ["Data Science in a Box"](https://datasciencebox.org) materials.
+The content in this tutorials is mainly adapted from the excellent book “Hands-on machine learning with scikit-learn, keras and tensorflow” from @Geron2019.
 
 The website is built with [bookdown](https://bookdown.org/).
