@@ -4,14 +4,14 @@ bookdown::bs4_book:
     primary: "#1E5C65"
   repo: https://github.com/kirenz/tidymodels  
   
-bookdown::gitbook:
-  config:
-    toc:
-      collapse: section
-      before: |
-        <li><strong><a href="./">Tidymodels</a></strong></li>
-    edit:
-      link: https://github.com/kirenz/tidymodels/edit/master/%s
-      text: "Edit"
-    sharing: no
-  css: [css/dsbox.css, css/fontawesome/css/all.css]
+# bookdown::gitbook:
+#   config:
+#     toc:
+#       collapse: section
+#       before: |
+#         <li><strong><a href="./">Tidymodels</a></strong></li>
+#     edit:
+#       link: https://github.com/kirenz/tidymodels/edit/master/%s
+#       text: "Edit"
+#     sharing: no
+#   css: [css/dsbox.css, css/fontawesome/css/all.css]

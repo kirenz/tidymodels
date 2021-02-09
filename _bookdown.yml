@@ -6,11 +6,9 @@ language:
 
 rmd_files: [
   "index.Rmd",
-  "01-overview.Rmd",
-  "02-hello-world.Rmd",
-  "02-exploring-data.Rmd",
-  "02-making-rigorous-conclusions.Rmd",
-  "02-interactive-tutorials.Rmd"
+  "01-crispdm.Rmd",
+  "02-regression.Rmd",
+  "03-references.Rmd"
   ]
 
 before_chapter_script: "_common.R"

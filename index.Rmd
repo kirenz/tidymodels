@@ -18,7 +18,7 @@ link-citations: yes
 In this book we'll cover the  [`tidymodels`](https://www.tidymodels.org/) framework, which is a collection of packages for modeling and machine learning using [tidyverse](https://www.tidyverse.org/) principles to build regression and classification models. Furthermore, we follow the data science lifecycle process proposed by @Wirth2000:
 
 
-```{r crisp, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Cross Industry Standard Process for Data Mining (@Wirth2000)}
+```{r crisp1, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Cross Industry Standard Process for Data Mining (@Wirth2000)"}
 
 knitr::include_graphics("css/CRISP-DM.png")
 

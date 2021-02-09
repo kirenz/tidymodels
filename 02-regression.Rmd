@@ -60,7 +60,7 @@ In our example, the goal is to build a model of housing prices in California. In
 
 Let's assume that the model’s output (a prediction of a district’s median housing price) will be fed to another analytics system, along with other data. This downstream system will determine whether it is worth investing in a given area or not. The **data processing components** (also called data pipeline) are shown in \@ref(fig:datapipeline) (you can use [Google's architectural templates](https://docs.google.com/presentation/d/1vjm5YdmOH5LrubFhHf1vlqW2O9Z2UqdWA8biN3e8K5U/edit#slide=id.g19b41f69d7_2_265) to draw the data pipeline).
 
-```{r datapipeline, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Data processing components}
+```{r datapipeline, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Data processing components"}
 
 knitr::include_graphics("css/data-pipeline.png")
 

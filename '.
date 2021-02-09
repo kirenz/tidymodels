@@ -1,7 +1,12 @@
 
 
 processing file: Tidymodels.Rmd
-output file: Tidymodels.knit.md
-
-
-Output created: _book/index.html
+(*) NOTE: I saw chunk options "crisp, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Cross Industry Standard Process for Data Mining (@Wirth2000)"
+ please go to https://yihui.org/knitr/options
+ (it is likely that you forgot to quote "character" options)
+Fehler in parse(text = code, keep.source = FALSE) : 
+  <text>:1:75: Unerwartete(s) INCOMPLETE_STRING
+1: alist( 'crisp', fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Cross Industry Standard Process for Data Mining (@Wirth2000) )
+                                                                              ^
+Ruft auf: local ... parse_params -> withCallingHandlers -> eval -> parse_only -> parse
+Ausführung angehalten
