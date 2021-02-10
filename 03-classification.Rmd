@@ -1,6 +1,6 @@
 # (PART) CLASSIFICATION {-} 
 
-# Introduction {#intro}
+# Introduction {#intro2}
 
 
 ```{r include=FALSE}
@@ -21,6 +21,7 @@ library(tidymodels)
 library(visdat)
 library(corrr)
 library(ggsignif)
+library(gt)
 
 
 # The number of physical cores of your hardware:
@@ -36,12 +37,14 @@ registerDoMC(cores = 4)
 theme_set(theme_classic())
 ```
 
-In this chapter, we'll build the following models:
+In this chapter, we'll build the following classification models:
 
 * logistic regression
 * random forest,
 * XGBoost (extreme gradient boosted trees),
 * K-nearest neighbor
+
+We use the same data and follow the same procedure as in our regression example.
 
 
 # Business understanding
@@ -239,6 +242,8 @@ housing_df <-
 Take a look at our dependent variable and  create a table with the package [`gt`](https://gt.rstudio.com/) 
 
 ```{r}
+library(gt)
+
 housing_df %>% 
   count(price_category, # count observations
         name ="districts_total") %>%  # name the new variable 
@@ -1147,6 +1152,7 @@ model_comp %>%
 Note that the model results are all quite similar. 
 
 ```{r}
+
 # find maximum accuracy
 model_comp %>% 
   slice_max(mean_accuracy)

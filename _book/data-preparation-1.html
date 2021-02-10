@@ -41,6 +41,12 @@
 <li><a class="" href="data-understanding-1.html"><span class="header-section-number">4</span> Data understanding</a></li>
 <li><a class="active" href="data-preparation-1.html"><span class="header-section-number">5</span> Data preparation</a></li>
 <li><a class="" href="model-building.html"><span class="header-section-number">6</span> Model building</a></li>
+<li class="book-part">CLASSIFICATION</li>
+<li><a class="" href="intro2.html"><span class="header-section-number">7</span> Introduction</a></li>
+<li><a class="" href="business-understanding-2.html"><span class="header-section-number">8</span> Business understanding</a></li>
+<li><a class="" href="data-understanding-2.html"><span class="header-section-number">9</span> Data understanding</a></li>
+<li><a class="" href="data-preparation-3.html"><span class="header-section-number">10</span> Data preparation</a></li>
+<li><a class="" href="model-building-1.html"><span class="header-section-number">11</span> Model building</a></li>
 <li><a class="" href="references.html">References</a></li>
 </ul>
 
@@ -130,7 +136,7 @@
 <li><p><code>step_naomit()</code> removes observations (rows of data) if they contain NA or NaN values. We use <code>skip = TRUE</code> because we don’t want to perform this part to new data so that the number of samples in the assessment set is the same as the number of predicted values (even if they are NA).</p></li>
 <li><p><code>step_novel()</code> converts all nominal variables to factors and takes care of other issues related to categorical variables.</p></li>
 <li><p><code>step_log()</code> will log transform data (since some of our numerical variables are right-skewed). Note that this step can not be performed on negative numbers.</p></li>
-<li><p><code>step_normalize()</code> normalizes (center and scales) the numeric variables (i.e., z-standardization).</p></li>
+<li><p><code>step_normalize()</code> normalizes (center and scales) the numeric variables to have a standard deviation of one and a mean of zero. (i.e., z-standardization).</p></li>
 <li><p><code>step_dummy()</code> converts our factor column <code>ocean_proximity</code> into numeric binary (0 and 1) variables.</p></li>
 <li><p><code>step_zv()</code>: removes any numeric variables that have zero variance.</p></li>
 <li><p><code>step_corr()</code>: will remove predictor variables that have large correlations with other predictor variables.</p></li>

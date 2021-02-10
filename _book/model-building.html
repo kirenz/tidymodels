@@ -41,6 +41,12 @@
 <li><a class="" href="data-understanding-1.html"><span class="header-section-number">4</span> Data understanding</a></li>
 <li><a class="" href="data-preparation-1.html"><span class="header-section-number">5</span> Data preparation</a></li>
 <li><a class="active" href="model-building.html"><span class="header-section-number">6</span> Model building</a></li>
+<li class="book-part">CLASSIFICATION</li>
+<li><a class="" href="intro2.html"><span class="header-section-number">7</span> Introduction</a></li>
+<li><a class="" href="business-understanding-2.html"><span class="header-section-number">8</span> Business understanding</a></li>
+<li><a class="" href="data-understanding-2.html"><span class="header-section-number">9</span> Data understanding</a></li>
+<li><a class="" href="data-preparation-3.html"><span class="header-section-number">10</span> Data preparation</a></li>
+<li><a class="" href="model-building-1.html"><span class="header-section-number">11</span> Model building</a></li>
 <li><a class="" href="references.html">References</a></li>
 </ul>
 
@@ -232,7 +238,7 @@
 <span class="va">lasso_res</span> <span class="op">&lt;-</span> 
   <span class="va">lasso_wflow</span> <span class="op">%&gt;%</span> <span class="co"># use workflow object</span>
   <span class="fu">fit_resamples</span><span class="op">(</span>resamples <span class="op">=</span> <span class="va">cv_folds</span>,
-                control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># svae predictions</span>
+                control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># save predictions</span>
     <span class="op">)</span></code></pre></div>
 <p>Show average performance over all folds:</p>
 <div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
@@ -488,13 +494,15 @@
 <span class="co">#&gt; 1 rmse    standard       0.305 Preprocessor1_Model1</span>
 <span class="co">#&gt; 2 rsq     standard       0.682 Preprocessor1_Model1</span></code></pre></div>
 <p>And this is our final result. Remember that if a model fit to the training dataset also fits the test dataset well, minimal <em>overfitting</em> has taken place. This seems to be also the case in our example.</p>
-<p>If the model result is good enogh to be used in our project can only be decided by people with expertise in the domain of housing prices.</p>
 
 </div>
 </div>
+
+
+
   <div class="chapter-nav">
 <div class="prev"><a href="data-preparation-1.html"><span class="header-section-number">5</span> Data preparation</a></div>
-<div class="next"><a href="references.html">References</a></div>
+<div class="next"><a href="intro2.html"><span class="header-section-number">7</span> Introduction</a></div>
 </div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
     <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
       <ul class="nav navbar-nav">

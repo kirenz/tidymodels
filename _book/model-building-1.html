@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Chapter 11 Model building | Introduction to Regression and Classification with Tidymodels</title>
+<meta name="author" content="Jan Kirenz">
+<!-- JS --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.2"></script><script src="https://kit.fontawesome.com/6ecbd6c532.js" crossorigin="anonymous"></script><script src="libs/header-attrs-2.6.6/header-attrs.js"></script><script src="libs/jquery-3.5.1/jquery-3.5.1.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="libs/bootstrap-4.5.3/bootstrap.min.css" rel="stylesheet">
+<script src="libs/bootstrap-4.5.3/bootstrap.bundle.min.js"></script><script src="libs/bs3compat-0.2.4.9000/tabs.js"></script><script src="libs/bs3compat-0.2.4.9000/bs3compat.js"></script><link href="libs/bs4_book-1.0.0/bs4_book.css" rel="stylesheet">
+<script src="libs/bs4_book-1.0.0/bs4_book.js"></script><script src="https://cdn.jsdelivr.net/autocomplete.js/0/autocomplete.jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/mark.js@8.11.1/dist/mark.min.js"></script><!-- CSS --><link rel="stylesheet" href="css/dsbox.css">
+<link rel="stylesheet" href="css/fontawesome/css/all.css">
+</head>
+<body data-spy="scroll" data-target="#toc">
+
+<div class="container-fluid">
+<div class="row">
+  <header class="col-sm-12 col-lg-3 sidebar sidebar-book"><a class="sr-only sr-only-focusable" href="#content">Skip to main content</a>
+
+    <div class="d-flex align-items-start justify-content-between">
+      <h1>
+        <a href="index.html" title="">Introduction to Regression and Classification with Tidymodels</a>
+      </h1>
+      <button class="btn btn-outline-primary d-lg-none ml-2 mt-1" type="button" data-toggle="collapse" data-target="#main-nav" aria-expanded="true" aria-controls="main-nav"><i class="fas fa-bars"></i><span class="sr-only">Show table of contents</span></button>
+    </div>
+
+    <div id="main-nav" class="collapse-lg">
+      <form role="search">
+        <input id="search" class="form-control" type="search" placeholder="Search" aria-label="Search">
+</form>
+
+      <nav aria-label="Table of contents"><h2>Table of contents</h2>
+        <ul class="book-toc list-unstyled">
+<li><a class="" href="index.html">Welcome</a></li>
+<li class="book-part">DATA SCIENCE LIFECYCLE</li>
+<li><a class="" href="crisp-dm.html"><span class="header-section-number">1</span> CRISP-DM</a></li>
+<li class="book-part">REGRESSION</li>
+<li><a class="" href="intro.html"><span class="header-section-number">2</span> Introduction</a></li>
+<li><a class="" href="business-understanding-1.html"><span class="header-section-number">3</span> Business understanding</a></li>
+<li><a class="" href="data-understanding-1.html"><span class="header-section-number">4</span> Data understanding</a></li>
+<li><a class="" href="data-preparation-1.html"><span class="header-section-number">5</span> Data preparation</a></li>
+<li><a class="" href="model-building.html"><span class="header-section-number">6</span> Model building</a></li>
+<li class="book-part">CLASSIFICATION</li>
+<li><a class="" href="intro2.html"><span class="header-section-number">7</span> Introduction</a></li>
+<li><a class="" href="business-understanding-2.html"><span class="header-section-number">8</span> Business understanding</a></li>
+<li><a class="" href="data-understanding-2.html"><span class="header-section-number">9</span> Data understanding</a></li>
+<li><a class="" href="data-preparation-3.html"><span class="header-section-number">10</span> Data preparation</a></li>
+<li><a class="active" href="model-building-1.html"><span class="header-section-number">11</span> Model building</a></li>
+<li><a class="" href="references.html">References</a></li>
+</ul>
+
+        <div class="book-extra">
+          <p><a id="book-repo" href="https://github.com/kirenz/tidymodels">View book source <i class="fab fa-github"></i></a></p>
+        </div>
+      </nav>
+</div>
+  </header><main class="col-sm-12 col-md-9 col-lg-7" id="content"><div id="model-building-1" class="section level1" number="11">
+<h1>
+<span class="header-section-number">11</span> Model building<a class="anchor" aria-label="anchor" href="#model-building-1"><i class="fas fa-link"></i></a>
+</h1>
+<div id="specify-models-1" class="section level2" number="11.1">
+<h2>
+<span class="header-section-number">11.1</span> Specify models<a class="anchor" aria-label="anchor" href="#specify-models-1"><i class="fas fa-link"></i></a>
+</h2>
+<p>The process of specifying our models is always as follows:</p>
+<ol style="list-style-type: decimal">
+<li>Pick a <code>model type</code>
+</li>
+<li>set the <code>engine</code>
+</li>
+<li>Set the <code>mode</code>: regression or classification</li>
+</ol>
+<p>You can choose the <code>model type</code> and <code>engine</code> from this <a href="https://www.tidymodels.org/find/parsnip/">list</a>.</p>
+<div id="logistic-regression" class="section level3" number="11.1.1">
+<h3>
+<span class="header-section-number">11.1.1</span> Logistic regression<a class="anchor" aria-label="anchor" href="#logistic-regression"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb100"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">log_spec</span> <span class="op">&lt;-</span> <span class="co"># your model specification</span>
+  <span class="fu">logistic_reg</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>  <span class="co"># model type</span>
+  <span class="fu">set_engine</span><span class="op">(</span>engine <span class="op">=</span> <span class="st">"glm"</span><span class="op">)</span> <span class="op">%&gt;%</span>  <span class="co"># model engine</span>
+  <span class="fu">set_mode</span><span class="op">(</span><span class="st">"classification"</span><span class="op">)</span> <span class="co"># model mode</span>
+
+<span class="co"># Show your model specification</span>
+<span class="va">log_spec</span>
+<span class="co">#&gt; Logistic Regression Model Specification (classification)</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; Computational engine: glm</span></code></pre></div>
+</div>
+<div id="random-forest-3" class="section level3" number="11.1.2">
+<h3>
+<span class="header-section-number">11.1.2</span> Random forest<a class="anchor" aria-label="anchor" href="#random-forest-3"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb101"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/imbs-hl/ranger">ranger</a></span><span class="op">)</span>
+
+<span class="va">rf_spec</span> <span class="op">&lt;-</span> 
+  <span class="fu">rand_forest</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">set_engine</span><span class="op">(</span><span class="st">"ranger"</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">set_mode</span><span class="op">(</span><span class="st">"classification"</span><span class="op">)</span></code></pre></div>
+</div>
+<div id="boosted-tree-xgboost-1" class="section level3" number="11.1.3">
+<h3>
+<span class="header-section-number">11.1.3</span> Boosted tree (XGBoost)<a class="anchor" aria-label="anchor" href="#boosted-tree-xgboost-1"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb102"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/dmlc/xgboost">xgboost</a></span><span class="op">)</span>
+
+<span class="va">xgb_spec</span> <span class="op">&lt;-</span> 
+  <span class="fu">boost_tree</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">set_engine</span><span class="op">(</span><span class="st">"xgboost"</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">set_mode</span><span class="op">(</span><span class="st">"classification"</span><span class="op">)</span> </code></pre></div>
+</div>
+<div id="k-nearest-neighbor-3" class="section level3" number="11.1.4">
+<h3>
+<span class="header-section-number">11.1.4</span> K-nearest neighbor<a class="anchor" aria-label="anchor" href="#k-nearest-neighbor-3"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb103"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">knn_spec</span> <span class="op">&lt;-</span> 
+  <span class="fu">nearest_neighbor</span><span class="op">(</span>neighbors <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">%&gt;%</span> <span class="co"># we can adjust the number of neighbors </span>
+  <span class="fu">set_engine</span><span class="op">(</span><span class="st">"kknn"</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">set_mode</span><span class="op">(</span><span class="st">"classification"</span><span class="op">)</span> </code></pre></div>
+</div>
+</div>
+<div id="create-workflows-1" class="section level2" number="11.2">
+<h2>
+<span class="header-section-number">11.2</span> Create workflows<a class="anchor" aria-label="anchor" href="#create-workflows-1"><i class="fas fa-link"></i></a>
+</h2>
+<p>To combine the data preparation recipe with the model building, we use the package <a href="https://workflows.tidymodels.org">workflows</a>. A workflow is an object that can bundle together your pre-processing recipe, modeling, and even post-processing requests (like calculating the RMSE).</p>
+<div id="logistic-regression-1" class="section level3" number="11.2.1">
+<h3>
+<span class="header-section-number">11.2.1</span> Logistic regression<a class="anchor" aria-label="anchor" href="#logistic-regression-1"><i class="fas fa-link"></i></a>
+</h3>
+<p>Bundle recipe and model with <code>workflows</code>:</p>
+<div class="sourceCode" id="cb104"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">log_wflow</span> <span class="op">&lt;-</span> <span class="co"># new workflow object</span>
+ <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> <span class="co"># use workflow function</span>
+ <span class="fu">add_recipe</span><span class="op">(</span><span class="va">housing_rec</span><span class="op">)</span> <span class="op">%&gt;%</span>   <span class="co"># use the new recipe</span>
+ <span class="fu">add_model</span><span class="op">(</span><span class="va">log_spec</span><span class="op">)</span>   <span class="co"># add your model spec</span>
+
+
+<span class="co"># show object</span>
+<span class="va">log_wflow</span>
+<span class="co">#&gt; ══ Workflow ════════════════════════════════════════════════════════════════════</span>
+<span class="co">#&gt; Preprocessor: Recipe</span>
+<span class="co">#&gt; Model: logistic_reg()</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; ── Preprocessor ────────────────────────────────────────────────────────────────</span>
+<span class="co">#&gt; 7 Recipe Steps</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; ● step_log()</span>
+<span class="co">#&gt; ● step_naomit()</span>
+<span class="co">#&gt; ● step_novel()</span>
+<span class="co">#&gt; ● step_normalize()</span>
+<span class="co">#&gt; ● step_dummy()</span>
+<span class="co">#&gt; ● step_zv()</span>
+<span class="co">#&gt; ● step_corr()</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; ── Model ───────────────────────────────────────────────────────────────────────</span>
+<span class="co">#&gt; Logistic Regression Model Specification (classification)</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; Computational engine: glm</span></code></pre></div>
+</div>
+<div id="random-forest-4" class="section level3" number="11.2.2">
+<h3>
+<span class="header-section-number">11.2.2</span> Random forest<a class="anchor" aria-label="anchor" href="#random-forest-4"><i class="fas fa-link"></i></a>
+</h3>
+<p>Bundle recipe and model:</p>
+<div class="sourceCode" id="cb105"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">rf_wflow</span> <span class="op">&lt;-</span>
+ <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
+ <span class="fu">add_recipe</span><span class="op">(</span><span class="va">housing_rec</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+ <span class="fu">add_model</span><span class="op">(</span><span class="va">rf_spec</span><span class="op">)</span> </code></pre></div>
+</div>
+<div id="xgboost-2" class="section level3" number="11.2.3">
+<h3>
+<span class="header-section-number">11.2.3</span> XGBoost<a class="anchor" aria-label="anchor" href="#xgboost-2"><i class="fas fa-link"></i></a>
+</h3>
+<p>Bundle recipe and model:</p>
+<div class="sourceCode" id="cb106"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">xgb_wflow</span> <span class="op">&lt;-</span>
+ <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
+ <span class="fu">add_recipe</span><span class="op">(</span><span class="va">housing_rec</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+ <span class="fu">add_model</span><span class="op">(</span><span class="va">xgb_spec</span><span class="op">)</span></code></pre></div>
+</div>
+<div id="k-nearest-neighbor-4" class="section level3" number="11.2.4">
+<h3>
+<span class="header-section-number">11.2.4</span> K-nearest neighbor<a class="anchor" aria-label="anchor" href="#k-nearest-neighbor-4"><i class="fas fa-link"></i></a>
+</h3>
+<p>Bundle recipe and model:</p>
+<div class="sourceCode" id="cb107"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">knn_wflow</span> <span class="op">&lt;-</span>
+ <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
+ <span class="fu">add_recipe</span><span class="op">(</span><span class="va">housing_rec</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+ <span class="fu">add_model</span><span class="op">(</span><span class="va">knn_spec</span><span class="op">)</span></code></pre></div>
+</div>
+</div>
+<div id="evaluate-models-1" class="section level2" number="11.3">
+<h2>
+<span class="header-section-number">11.3</span> Evaluate models<a class="anchor" aria-label="anchor" href="#evaluate-models-1"><i class="fas fa-link"></i></a>
+</h2>
+<p>Now we can use our validation set (<code>cv_folds</code>) to estimate the performance of our models using the <code>fit_resamples()</code> function to fit the models on each of the folds and store the results.</p>
+<p>Note that <code>fit_resamples()</code> will fit our model to each resample and evaluate on the heldout set from each resample. The function is usually only used for computing performance metrics across some set of resamples to evaluate our models (like accuracy) - the models are not even stored. However, in our example we save the predictions in order to visualize the model fit and residuals with <code>control_resamples(save_pred = TRUE)</code>.</p>
+<p>Finally, we collect the performance metrics with <code>collect_metrics()</code> and pick the model that does best on the validation set.</p>
+<div id="logistic-regression-2" class="section level3" number="11.3.1">
+<h3>
+<span class="header-section-number">11.3.1</span> Logistic regression<a class="anchor" aria-label="anchor" href="#logistic-regression-2"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb108"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>
+
+<span class="va">log_res</span> <span class="op">&lt;-</span> 
+  <span class="va">log_wflow</span> <span class="op">%&gt;%</span> <span class="co"># use workflow object</span>
+  <span class="fu">fit_resamples</span><span class="op">(</span>resamples <span class="op">=</span> <span class="va">cv_folds</span>,
+                control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># save predictions</span>
+    <span class="op">)</span></code></pre></div>
+<div id="accuracy-and-auc" class="section level4" number="11.3.1.1">
+<h4>
+<span class="header-section-number">11.3.1.1</span> Accuracy and AUC<a class="anchor" aria-label="anchor" href="#accuracy-and-auc"><i class="fas fa-link"></i></a>
+</h4>
+<p>Show average performance over all folds:</p>
+<div class="sourceCode" id="cb109"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">log_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 2 x 6</span>
+<span class="co">#&gt;   .metric  .estimator  mean     n std_err .config             </span>
+<span class="co">#&gt;   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               </span>
+<span class="co">#&gt; 1 accuracy binary     0.849     5 0.00283 Preprocessor1_Model1</span>
+<span class="co">#&gt; 2 roc_auc  binary     0.918     5 0.00117 Preprocessor1_Model1</span></code></pre></div>
+<p>Show performance for every single fold:</p>
+<div class="sourceCode" id="cb110"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">log_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 10 x 5</span>
+<span class="co">#&gt;   id    .metric  .estimator .estimate .config             </span>
+<span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               </span>
+<span class="co">#&gt; 1 Fold1 accuracy binary         0.842 Preprocessor1_Model1</span>
+<span class="co">#&gt; 2 Fold1 roc_auc  binary         0.914 Preprocessor1_Model1</span>
+<span class="co">#&gt; 3 Fold2 accuracy binary         0.858 Preprocessor1_Model1</span>
+<span class="co">#&gt; 4 Fold2 roc_auc  binary         0.921 Preprocessor1_Model1</span>
+<span class="co">#&gt; 5 Fold3 accuracy binary         0.844 Preprocessor1_Model1</span>
+<span class="co">#&gt; 6 Fold3 roc_auc  binary         0.918 Preprocessor1_Model1</span>
+<span class="co">#&gt; # … with 4 more rows</span></code></pre></div>
+</div>
+<div id="collect-predictions" class="section level4" number="11.3.1.2">
+<h4>
+<span class="header-section-number">11.3.1.2</span> Collect predictions<a class="anchor" aria-label="anchor" href="#collect-predictions"><i class="fas fa-link"></i></a>
+</h4>
+<p>To obtain the actual model predictions, we use the function <code>collect_predictions</code> and save the result as <code>log_pred</code>:</p>
+<div class="sourceCode" id="cb111"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">log_pred</span> <span class="op">&lt;-</span> 
+  <span class="va">log_res</span> <span class="op">%&gt;%</span>
+  <span class="fu">collect_predictions</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+</div>
+<div id="confusion-matrix" class="section level4" number="11.3.1.3">
+<h4>
+<span class="header-section-number">11.3.1.3</span> Confusion matrix<a class="anchor" aria-label="anchor" href="#confusion-matrix"><i class="fas fa-link"></i></a>
+</h4>
+<p>Now we can use the predictions to create a <em>confusion matrix</em>:</p>
+<div class="sourceCode" id="cb112"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">log_pred</span> <span class="op">%&gt;%</span>
+  <span class="fu">conf_mat</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_class</span><span class="op">)</span>
+<span class="co">#&gt;           Truth</span>
+<span class="co">#&gt; Prediction above below</span>
+<span class="co">#&gt;      above  8788  1306</span>
+<span class="co">#&gt;      below  1025  4361</span></code></pre></div>
+</div>
+<div id="recall-precision-f1" class="section level4" number="11.3.1.4">
+<h4>
+<span class="header-section-number">11.3.1.4</span> Recall, precision, F1<a class="anchor" aria-label="anchor" href="#recall-precision-f1"><i class="fas fa-link"></i></a>
+</h4>
+<p>Obtain recall, precision and F1-Score:</p>
+<div class="sourceCode" id="cb113"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="co"># recall</span>
+<span class="va">log_res</span> <span class="op">%&gt;%</span>
+  <span class="fu">collect_predictions</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu">recall</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_class</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 1 x 3</span>
+<span class="co">#&gt;   .metric .estimator .estimate</span>
+<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;</span>
+<span class="co">#&gt; 1 recall  binary         0.896</span>
+
+<span class="co"># precision</span>
+<span class="va">log_res</span> <span class="op">%&gt;%</span>
+  <span class="fu">collect_predictions</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu">precision</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_class</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 1 x 3</span>
+<span class="co">#&gt;   .metric   .estimator .estimate</span>
+<span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;          &lt;dbl&gt;</span>
+<span class="co">#&gt; 1 precision binary         0.871</span>
+
+<span class="co"># F1 Score</span>
+<span class="va">log_res</span> <span class="op">%&gt;%</span>
+  <span class="fu">collect_predictions</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu">f_meas</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_class</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 1 x 3</span>
+<span class="co">#&gt;   .metric .estimator .estimate</span>
+<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;</span>
+<span class="co">#&gt; 1 f_meas  binary         0.883</span></code></pre></div>
+</div>
+<div id="probability-distributions" class="section level4" number="11.3.1.5">
+<h4>
+<span class="header-section-number">11.3.1.5</span> Probability distributions<a class="anchor" aria-label="anchor" href="#probability-distributions"><i class="fas fa-link"></i></a>
+</h4>
+<p>Plot predicted probability distributions for out two classes.</p>
+<div class="sourceCode" id="cb114"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">log_res</span> <span class="op">%&gt;%</span>
+  <span class="fu">collect_predictions</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">ggplot</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu">geom_density</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">.pred_above</span>, fill <span class="op">=</span> <span class="va">price_category</span><span class="op">)</span>, 
+               alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></code></pre></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-111-1.png" width="70%" style="display: block; margin: auto;"></div>
+</div>
+</div>
+<div id="random-forest-5" class="section level3" number="11.3.2">
+<h3>
+<span class="header-section-number">11.3.2</span> Random forest<a class="anchor" aria-label="anchor" href="#random-forest-5"><i class="fas fa-link"></i></a>
+</h3>
+<p>We don’t repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.</p>
+<div class="sourceCode" id="cb115"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">rf_res</span> <span class="op">&lt;-</span>
+  <span class="va">rf_wflow</span> <span class="op">%&gt;%</span> 
+  <span class="fu">fit_resamples</span><span class="op">(</span>
+    resamples <span class="op">=</span> <span class="va">cv_folds</span>,
+    control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+    <span class="op">)</span>
+
+<span class="va">rf_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 2 x 6</span>
+<span class="co">#&gt;   .metric  .estimator  mean     n std_err .config             </span>
+<span class="co">#&gt;   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               </span>
+<span class="co">#&gt; 1 accuracy binary     0.859     5 0.00321 Preprocessor1_Model1</span>
+<span class="co">#&gt; 2 roc_auc  binary     0.926     5 0.00202 Preprocessor1_Model1</span></code></pre></div>
+</div>
+<div id="xgboost-3" class="section level3" number="11.3.3">
+<h3>
+<span class="header-section-number">11.3.3</span> XGBoost<a class="anchor" aria-label="anchor" href="#xgboost-3"><i class="fas fa-link"></i></a>
+</h3>
+<p>We don’t repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.</p>
+<div class="sourceCode" id="cb116"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">xgb_res</span> <span class="op">&lt;-</span> 
+  <span class="va">xgb_wflow</span> <span class="op">%&gt;%</span> 
+  <span class="fu">fit_resamples</span><span class="op">(</span>
+    resamples <span class="op">=</span> <span class="va">cv_folds</span>,
+    control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+    <span class="op">)</span> 
+
+<span class="va">xgb_res</span> <span class="op">%&gt;%</span> <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 2 x 6</span>
+<span class="co">#&gt;   .metric  .estimator  mean     n std_err .config             </span>
+<span class="co">#&gt;   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               </span>
+<span class="co">#&gt; 1 accuracy binary     0.859     5 0.00262 Preprocessor1_Model1</span>
+<span class="co">#&gt; 2 roc_auc  binary     0.928     5 0.00121 Preprocessor1_Model1</span></code></pre></div>
+</div>
+<div id="k-nearest-neighbor-5" class="section level3" number="11.3.4">
+<h3>
+<span class="header-section-number">11.3.4</span> K-nearest neighbor<a class="anchor" aria-label="anchor" href="#k-nearest-neighbor-5"><i class="fas fa-link"></i></a>
+</h3>
+<p>We don’t repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.</p>
+<div class="sourceCode" id="cb117"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">knn_res</span> <span class="op">&lt;-</span> 
+  <span class="va">knn_wflow</span> <span class="op">%&gt;%</span> 
+  <span class="fu">fit_resamples</span><span class="op">(</span>
+    resamples <span class="op">=</span> <span class="va">cv_folds</span>,
+    control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+    <span class="op">)</span> 
+
+<span class="va">knn_res</span> <span class="op">%&gt;%</span> <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 2 x 6</span>
+<span class="co">#&gt;   .metric  .estimator  mean     n std_err .config             </span>
+<span class="co">#&gt;   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               </span>
+<span class="co">#&gt; 1 accuracy binary     0.803     5 0.00437 Preprocessor1_Model1</span>
+<span class="co">#&gt; 2 roc_auc  binary     0.883     5 0.00289 Preprocessor1_Model1</span></code></pre></div>
+</div>
+<div id="compare-models-1" class="section level3" number="11.3.5">
+<h3>
+<span class="header-section-number">11.3.5</span> Compare models<a class="anchor" aria-label="anchor" href="#compare-models-1"><i class="fas fa-link"></i></a>
+</h3>
+<p>Extract the RMSE from our models to compare them:</p>
+<div class="sourceCode" id="cb118"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+
+<span class="va">log_metrics</span> <span class="op">&lt;-</span> 
+  <span class="va">log_res</span> <span class="op">%&gt;%</span> 
+  <span class="fu">collect_metrics</span><span class="op">(</span>summarise <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu">mutate</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"logistic"</span><span class="op">)</span>
+
+<span class="va">rf_metrics</span> <span class="op">&lt;-</span> 
+  <span class="va">rf_res</span> <span class="op">%&gt;%</span> 
+  <span class="fu">collect_metrics</span><span class="op">(</span>summarise <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu">mutate</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"random forest"</span><span class="op">)</span>
+
+<span class="va">xgb_metrics</span> <span class="op">&lt;-</span> 
+  <span class="va">xgb_res</span> <span class="op">%&gt;%</span> 
+  <span class="fu">collect_metrics</span><span class="op">(</span>summarise <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu">mutate</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"XGBoost"</span><span class="op">)</span>
+
+<span class="va">knn_metrics</span> <span class="op">&lt;-</span> 
+  <span class="va">knn_res</span> <span class="op">%&gt;%</span> 
+  <span class="fu">collect_metrics</span><span class="op">(</span>summarise <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu">mutate</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"Knn"</span><span class="op">)</span>
+
+<span class="co"># create dataframe with all models</span>
+<span class="va">model_compare</span> <span class="op">&lt;-</span> <span class="fu">bind_rows</span><span class="op">(</span><span class="va">log_metrics</span>,
+                           <span class="va">rf_metrics</span>,
+                           <span class="va">xgb_metrics</span>,
+                           <span class="va">knn_metrics</span><span class="op">)</span> 
+
+<span class="co"># change data structure</span>
+<span class="va">model_comp</span> <span class="op">&lt;-</span> 
+  <span class="va">model_compare</span> <span class="op">%&gt;%</span> 
+  <span class="fu">select</span><span class="op">(</span><span class="va">model</span>, <span class="va">.metric</span>, <span class="va">mean</span>, <span class="va">std_err</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">pivot_wider</span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">.metric</span>, values_from <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="va">mean</span>, <span class="va">std_err</span><span class="op">)</span><span class="op">)</span> 
+
+<span class="co"># show accuracy </span>
+<span class="va">model_comp</span> <span class="op">%&gt;%</span> 
+  <span class="fu">arrange</span><span class="op">(</span><span class="va">mean_accuracy</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">mutate</span><span class="op">(</span>model <span class="op">=</span> <span class="fu">fct_reorder</span><span class="op">(</span><span class="va">model</span>, <span class="va">mean_accuracy</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">model</span>, <span class="va">mean_accuracy</span>, fill<span class="op">=</span><span class="va">model</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu">geom_col</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu">scale_fill_brewer</span><span class="op">(</span>palette <span class="op">=</span> <span class="st">"Blues"</span><span class="op">)</span>
+
+<span class="co"># show AUC </span>
+<span class="va">model_comp</span> <span class="op">%&gt;%</span> 
+  <span class="fu">arrange</span><span class="op">(</span><span class="va">mean_roc_auc</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">mutate</span><span class="op">(</span>model <span class="op">=</span> <span class="fu">fct_reorder</span><span class="op">(</span><span class="va">model</span>, <span class="va">mean_roc_auc</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">model</span>, <span class="va">mean_roc_auc</span>, fill<span class="op">=</span><span class="va">model</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu">geom_col</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu">scale_fill_brewer</span><span class="op">(</span>palette <span class="op">=</span> <span class="st">"Blues"</span><span class="op">)</span>
+  </code></pre></div>
+<p><img src="Tidymodels_files/figure-html/unnamed-chunk-115-1.png" width="70%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-115-2.png" width="70%" style="display: block; margin: auto;"></p>
+<p>Note that the model results are all quite similar.</p>
+<div class="sourceCode" id="cb119"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="co"># find maximum accuracy</span>
+<span class="va">model_comp</span> <span class="op">%&gt;%</span> 
+  <span class="fu">slice_max</span><span class="op">(</span><span class="va">mean_accuracy</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 1 x 5</span>
+<span class="co">#&gt;   model   mean_accuracy mean_roc_auc std_err_accuracy std_err_roc_auc</span>
+<span class="co">#&gt;   &lt;chr&gt;           &lt;dbl&gt;        &lt;dbl&gt;            &lt;dbl&gt;           &lt;dbl&gt;</span>
+<span class="co">#&gt; 1 XGBoost         0.859        0.928          0.00262         0.00121</span></code></pre></div>
+<p>Now it’s time to fit the best model (in our case the XGBoost model) one last time to the full <em>training set</em> and evaluate the resulting final model on the <em>test set</em>.</p>
+</div>
+</div>
+<div id="last-fit-and-evaluation-on-test-set-1" class="section level2" number="11.4">
+<h2>
+<span class="header-section-number">11.4</span> Last fit and evaluation on test set<a class="anchor" aria-label="anchor" href="#last-fit-and-evaluation-on-test-set-1"><i class="fas fa-link"></i></a>
+</h2>
+<p>Tidymodels provides the function <a href="https://tune.tidymodels.org/reference/last_fit.html"><code>last_fit()</code></a> which fits a model to the <em>training data</em> and evaluates it on the <em>test set</em>. We just need to provide the workflow object of the best model as well as the <strong>data split</strong> object (not the training data).</p>
+<div class="sourceCode" id="cb120"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">last_fit_xgb</span> <span class="op">&lt;-</span> <span class="fu">last_fit</span><span class="op">(</span><span class="va">xgb_wflow</span>, split <span class="op">=</span> <span class="va">data_split</span><span class="op">)</span>
+
+<span class="co"># Show performance metrics</span>
+<span class="va">last_fit_xgb</span> <span class="op">%&gt;%</span> 
+  <span class="fu">collect_metrics</span><span class="op">(</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 2 x 4</span>
+<span class="co">#&gt;   .metric  .estimator .estimate .config             </span>
+<span class="co">#&gt;   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               </span>
+<span class="co">#&gt; 1 accuracy binary         0.852 Preprocessor1_Model1</span>
+<span class="co">#&gt; 2 roc_auc  binary         0.928 Preprocessor1_Model1</span></code></pre></div>
+<p>And this is our final result. Remember that if a model fit to the training dataset also fits the test dataset well, minimal <em>overfitting</em> has taken place. This seems to be also the case in our example.</p>
+
+</div>
+</div>
+  <div class="chapter-nav">
+<div class="prev"><a href="data-preparation-3.html"><span class="header-section-number">10</span> Data preparation</a></div>
+<div class="next"><a href="references.html">References</a></div>
+</div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
+    <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
+      <ul class="nav navbar-nav">
+<li><a class="nav-link" href="#model-building-1"><span class="header-section-number">11</span> Model building</a></li>
+<li>
+<a class="nav-link" href="#specify-models-1"><span class="header-section-number">11.1</span> Specify models</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#logistic-regression"><span class="header-section-number">11.1.1</span> Logistic regression</a></li>
+<li><a class="nav-link" href="#random-forest-3"><span class="header-section-number">11.1.2</span> Random forest</a></li>
+<li><a class="nav-link" href="#boosted-tree-xgboost-1"><span class="header-section-number">11.1.3</span> Boosted tree (XGBoost)</a></li>
+<li><a class="nav-link" href="#k-nearest-neighbor-3"><span class="header-section-number">11.1.4</span> K-nearest neighbor</a></li>
+</ul>
+</li>
+<li>
+<a class="nav-link" href="#create-workflows-1"><span class="header-section-number">11.2</span> Create workflows</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#logistic-regression-1"><span class="header-section-number">11.2.1</span> Logistic regression</a></li>
+<li><a class="nav-link" href="#random-forest-4"><span class="header-section-number">11.2.2</span> Random forest</a></li>
+<li><a class="nav-link" href="#xgboost-2"><span class="header-section-number">11.2.3</span> XGBoost</a></li>
+<li><a class="nav-link" href="#k-nearest-neighbor-4"><span class="header-section-number">11.2.4</span> K-nearest neighbor</a></li>
+</ul>
+</li>
+<li>
+<a class="nav-link" href="#evaluate-models-1"><span class="header-section-number">11.3</span> Evaluate models</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#logistic-regression-2"><span class="header-section-number">11.3.1</span> Logistic regression</a></li>
+<li><a class="nav-link" href="#random-forest-5"><span class="header-section-number">11.3.2</span> Random forest</a></li>
+<li><a class="nav-link" href="#xgboost-3"><span class="header-section-number">11.3.3</span> XGBoost</a></li>
+<li><a class="nav-link" href="#k-nearest-neighbor-5"><span class="header-section-number">11.3.4</span> K-nearest neighbor</a></li>
+<li><a class="nav-link" href="#compare-models-1"><span class="header-section-number">11.3.5</span> Compare models</a></li>
+</ul>
+</li>
+<li><a class="nav-link" href="#last-fit-and-evaluation-on-test-set-1"><span class="header-section-number">11.4</span> Last fit and evaluation on test set</a></li>
+</ul>
+
+      <div class="book-extra">
+        <ul class="list-unstyled">
+<li><a id="book-source" href="https://github.com/kirenz/tidymodels/blob/master/03-classification.Rmd">View source <i class="fab fa-github"></i></a></li>
+          <li><a id="book-edit" href="https://github.com/kirenz/tidymodels/edit/master/03-classification.Rmd">Edit this page <i class="fab fa-github"></i></a></li>
+        </ul>
+</div>
+    </nav>
+</div>
+
+</div>
+</div> <!-- .container -->
+
+<footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>"<strong>Introduction to Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-10.</p>
+  </div>
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>This book was built by the <a class="text-light" href="https://bookdown.org">bookdown</a> R package.</p>
+  </div>
+
+</div></div>
+</footer>
+</body>
+</html>
