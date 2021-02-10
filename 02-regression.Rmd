@@ -643,7 +643,7 @@ Let’s create a base `recipe` for all of our regression models (for one of the 
 
 * `step_log()` will log transform data (since some of our numerical variables are right-skewed). Note that this step can not be performed on negative numbers.
 
-* `step_normalize()` normalizes (center and scales) the numeric variables (i.e., z-standardization). 
+* `step_normalize()` normalizes (center and scales) the numeric variables to have a standard deviation of one and a mean of zero. (i.e., z-standardization). 
 
 * `step_dummy()` converts our factor column `ocean_proximity` into numeric binary (0 and 1) variables.
 
