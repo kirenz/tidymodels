@@ -1,4 +1,4 @@
-# (PART) REGRESSION {-} 
+# (PART) CLASSIFICATION {-} 
 
 # Introduction {#intro}
 
@@ -38,19 +38,10 @@ theme_set(theme_classic())
 
 In this chapter, we'll build the following models:
 
-* lasso, 
-* natural spline, 
+* logistic regression
 * random forest,
-* XGBoost (extreme gradient boosted trees)
+* XGBoost (extreme gradient boosted trees),
 * K-nearest neighbor
-
-*Lasso* 
-
-Lasso performs a so called L1 regularization (a process of introducing additional information in order to prevent overfitting), i.e. adds penalty equivalent to absolute value of the magnitude of coefficients. See James2000 for more details about lasso regression.
-
-*Natural spline*
-
-A natural spline is an advancement of a piecewise polynomial regression spline which involves fitting separate low-degree polynomials over different regions of our predictor space X. In particular, a natural spline is a regression spline with additional boundary constraints: the function is required to be linear at the boundary (in the region where X is smaller than the smallest knot, or larger than the largest knot). This additional constraint means that natural splines generally produce more stable estimates at the boundaries. See James2000 for more details about piecewise polynomial regression splines and natural splines.
 
 
 # Business understanding
@@ -66,11 +57,13 @@ In business understanding, you:
 
 First of all, we take a look at the big picture and define the objective of our data science project in business terms.
 
-In our example, the goal is to build a model of housing prices in California. In particular, the model should learn from California census data and be able to predict the median house price in any district (population of 600 to 3000 people), given some predictor variables. Hence, we face a **supervised learning** situation and should use a **regression model** to predict the numerical outcomes. Furthermore, we use the **root mean square error (RMSE)** as a performance measure for our regression problem.
+In our example, the goal is to build a classification model to predict the type of median housing prices in districts in California. In particular, the model should learn from California census data and be able to predict wether the median house price in a district (population of 600 to 3000 people) is below or above a certain threshold, given some predictor variables. Hence, we face a **supervised learning** situation and should use a **classification model** to predict the categorical outcomes (below or above the preice). Furthermore, we use the **F1-Score** as a performance measure for our classification problem.
 
-Let's assume that the model’s output (a prediction of a district’s median housing price) will be fed to another analytics system, along with other data. This downstream system will determine whether it is worth investing in a given area or not. The **data processing components** (also called data pipeline) are shown in \@ref(fig:datapipeline) (you can use [Google's architectural templates](https://docs.google.com/presentation/d/1vjm5YdmOH5LrubFhHf1vlqW2O9Z2UqdWA8biN3e8K5U/edit#slide=id.g19b41f69d7_2_265) to draw the data pipeline).
+Note that in our classification example we again use the dataset from the previous regession tutorial. Therefore, we first need to create our categorical dependent variable from the numeric variable median house value. We will do this in the phase data understanding during the creation of new variables. Afterwards, we will remove the numeric variable median house value from our data. 
 
-```{r datapipeline, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Data processing components"}
+Let's assume that the model’s output will be fed to another analytics system, along with other data. This downstream system will determine whether it is worth investing in a given area or not. The **data processing components** (also called data pipeline) are shown in \@ref(fig:datapipeline-class) (you can use [Google's architectural templates](https://docs.google.com/presentation/d/1vjm5YdmOH5LrubFhHf1vlqW2O9Z2UqdWA8biN3e8K5U/edit#slide=id.g19b41f69d7_2_265) to draw the data pipeline).
+
+```{r datapipeline-class, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Data processing components"}
 
 knitr::include_graphics("css/data-pipeline.png")
 
@@ -230,6 +223,59 @@ housing_df <-
 
 ```
 
+Furthermore, in our example we need to create our dependent variable and drop the original numeric variable:
+
+```{r}
+housing_df <- 
+  housing_df %>% 
+  mutate(price_category = case_when( 
+    median_house_value < 150000 ~ "below",
+    median_house_value >= 150000 ~ "above",
+    )) %>% 
+  mutate(price_category = as.factor(price_category)) %>% 
+  select(-median_house_value)
+```
+
+Take a look at our dependent variable and  create a table with the package [`gt`](https://gt.rstudio.com/) 
+
+```{r}
+housing_df %>% 
+  count(price_category, # count observations
+        name ="districts_total") %>%  # name the new variable 
+  mutate(percent = districts_total/sum(districts_total)) %>%  # calculate percentages
+  gt() # create table
+  
+```
+
+Let's make a nice looking table:
+
+```{r}
+
+housing_df %>% 
+  count(price_category, 
+        name ="districts_total") %>%
+  mutate(percent = districts_total/sum(districts_total)) %>%
+ gt() %>%
+  tab_header(
+    title = "California median house prices",
+    subtitle = "Districts above and below 150.000$"
+  ) %>%
+  cols_label(
+    price_category = "Price",
+    districts_total = "Districts",
+    percent = "Percent"
+  ) %>% 
+  fmt_number(
+    columns = vars(districts_total),
+    suffixing = TRUE
+  ) %>% 
+  fmt_percent(
+    columns = vars(percent),
+    decimal = 2
+  )
+
+```
+
 
 ## Data overview  
 
@@ -258,31 +304,31 @@ library(GGally)
 
 housing_df %>% 
   select(
-    median_house_value, housing_median_age, 
+    housing_median_age, 
     median_income, bedrooms_per_room, rooms_per_household, 
     population_per_household) %>% 
   ggscatmat(alpha = 0.2)
 
 ```
 
-Another option is to use `ggpairs`, where we even can integrate our categorical variable `ocean_proximity` in the output:
+Another option is to use `ggpairs`, where we even can integrate categorical variables like our dependent variable `price_category` and ocean proximity in the output:
 
 ```{r}
 library(GGally)
 
 housing_df %>% 
   select(
-    median_house_value, housing_median_age, 
+    housing_median_age, 
     median_income, bedrooms_per_room, rooms_per_household, 
-    population_per_household,
-    ocean_proximity) %>% 
+    population_per_household, ocean_proximity,
+    price_category) %>% 
   ggpairs()
 
 ```
 
 There are a few things you might notice in these histograms:
 
-* The variables *median income*, *housing median age* and the *median house value* were capped. The latter may be a serious problem since it is our target attribute (your y label). Our Machine Learning algorithms may learn that prices never go beyond that limit. This will be a serious problem if we need predictions beyond 500,000. We take care of this issue in our data preparation phase and only use districts below 500,000.
+* The variables *median income*, *housing median age* were capped. 
 
 * Note that our attributes have very different scales. We will take care of this issue later in data preparation, when we use feature scaling (data normalization).
 
@@ -295,18 +341,18 @@ Before we get started with our in-depth data exploration, let’s split our sing
 
 A **training dataset** is a dataset of examples used during the learning process and is used to fit the models. A **test dataset** is a dataset that is independent of the training dataset and is used to evaluate the performance of the final model. If a model fit to the training dataset also fits the test dataset well, minimal *overfitting* has taken place. A better fitting of the training dataset as opposed to the test dataset usually points to overfitting.
 
-In our data split, we want to ensure that the training and test set is representative of the various categories of median house values in the whole dataset. Take a look at \@ref(fig:hist-med-value)
+In our data split, we want to ensure that the training and test set is representative of the  categories of our dependent variable. Take a look at \@ref(fig:hist-med-value-class)
 
 
-```{r hist-med-value, fig.cap="Histogram of Median Proces", out.width='80%'}
+```{r hist-med-value-class, fig.cap="Histogram of Median Proces", out.width='80%'}
 
 housing_df %>% 
-  ggplot(aes(median_house_value)) +
-  geom_histogram(bins = 4) 
+  ggplot(aes(price_category)) +
+  geom_bar() 
 
 ```
 
-In general, we would like to have instances for each *stratum*, or else the estimate of a stratum's importance may be biased. A *stratum* (plural strata) refers to a subset (part) of the whole data from which is being sampled. You should not have too many strata, and each stratum should be large enough. We use 4 strata in our example. 
+In general, we would like to have instances for each *stratum*, or else the estimate of a stratum's importance may be biased. A *stratum* (plural strata) refers to a subset (part) of the whole data from which is being sampled. We only have two categories in our data. 
 
 To actually split the data, we can use the `rsample` package (included in `tidymodels`) to create an object that contains the information on how to split the data (which we call `data_split`), and then two more `rsample` functions to create data frames for the training and testing sets:
 
@@ -319,8 +365,7 @@ set.seed(123)
 # Put 3/4 of the data into the training set 
 data_split <- initial_split(housing_df, 
                            prop = 3/4, 
-                           strata = median_house_value, 
-                           breaks = 4)
+                           strata = price_category)
 
 # Create dataframes for the two sets:
 train_data <- training(data_split) 
@@ -344,7 +389,7 @@ data_explore <- train_data
 
 ```
 
-Next, we take a closer look at the relationships between our variables. In particular, we are interested in the relationships between our *dependent* variable `median_house_value` and all other variables. The goal is to identify possible *predictor variables* which we could use in our models to predict the `median_house_value`. 
+Next, we take a closer look at the relationships between our variables. In particular, we are interested in the relationships between our *dependent* variable `price_category` and all other variables. The goal is to identify possible *predictor variables* which we could use in our models to predict the `price_category`. 
 
 
 ### Geographical overview
@@ -376,13 +421,12 @@ Overview about California housing prices:
 - larger circles indicate areas with a larger population.
 
 
-```{r plot-ca-prices, fig.cap="California housing_df prices", out.width='80%'}
+```{r plot-ca-prices-class, fig.cap="California housing_df prices", out.width='80%'}
 
 data_explore %>% 
   ggplot(aes(x = longitude, y = latitude)) +
-  geom_point(aes(size = population, color = median_house_value), 
-             alpha = 0.4) +
-  scale_colour_gradientn(colours=rev(rainbow(4)))
+  geom_point(aes(size = population, color = price_category), 
+             alpha = 0.4)
 
 ```
 
@@ -395,168 +439,183 @@ qmplot(x = longitude,
        y = latitude, 
        data = data_explore, 
        geom = "point", 
-       color = median_house_value, 
+       color = price_category, 
        size = population,
        alpha = 0.4) +
-  scale_colour_gradientn(colours=rev(rainbow(4))) +
   scale_alpha(guide = 'none') # don't show legend for alpha
 
 ```
 
-This image tells you that the housing prices are very much related to the location (e.g., close to the ocean) and to the population density. Hence our `ocean_proximity` variable may be a useful predictor of median housing prices, although in Northern California the housing prices in coastal districts are not too high, so it is not a simple rule.
+This image tells you that the housing prices are very much related to the location (e.g., close to the ocean) and to the population density. Hence our `ocean_proximity` variable may be a useful predictor of our categorical price variable median housing prices, although in Northern California the housing prices in coastal districts are not too high, so it is not a simple rule.
 
-### Boxplots
+### Numerical variables
 
-We can use boxplots to check, if we actually find differences in the median house value for the different levels of the *categorical variable* `ocean_proximity`. Additionally, we use the package `ggsignif` to calculate the significance of the difference between two of our groups and add the annotation to the plot in a single line.   
+We can use boxplots to check, if we actually find differences in our numeric variables for the different levels of our dependent *categorical variable*:
+
 
 ```{r}
-library(ggsignif)
 
 data_explore %>% 
-  ggplot(aes(ocean_proximity, median_house_value)) +
-  geom_boxplot(fill="steelblue") +
-  xlab("Ocean proximity") +
-  ylab("Median house value") +
-  geom_signif(comparisons = list(c("<1H OCEAN", "INLAND")), # calculate significance
-               map_signif_level=TRUE) 
+  ggplot(aes(x = price_category, y = median_income, 
+             fill = price_category, color = price_category)) +
+  geom_boxplot(alpha=0.4) 
   
 ```
 
-We can observe a difference in the median house value for the different levels of our categorical variable (except between "NEAR BAY" and "NEAR OCEAN") why we should include this variable in our model. Furthermore, the difference between "<1H OCEAN" and "INLAND" is  statistically significant.
-
-
-### Correlations
-
-Now let's analyze our numerical variables: To obtain the correlations of our numerical data, we can use the function `vis_cor` from the `visdat` package. We use Spearman's correlation coefficient since this measure is more insensitive to outliers than Pearson's correlation coefficient:
+Let`s define a function for this task that accepts strings as inputs so we don't have to copy and paste our code for every plot. Note that we only have to change the "y-variable" in every  plot.
 
 ```{r}
-library(visdat)
 
-data_explore %>% 
-  select(where(is.numeric)) %>% # only select numerical data
-  vis_cor(cor_method = "spearman", na_action = "pairwise.complete.obs")
-
-```
-
-Now we take a closer look at the correlation coefficients with the package `corrr`. 
-
-```{r}
-library(corrr)
-
-# calculate all correlations
-cor_res <- 
-  data_explore %>%
-  select(where(is.numeric)) %>% 
-  correlate(method = "spearman", use = "pairwise.complete.obs") 
-
-# show correlations
-cor_res %>% 
-  select(term, median_house_value) %>% 
-  filter(!is.na(median_house_value)) %>% # focus on dependent variable 
-  arrange(median_house_value) %>% # sort values
-  fashion() # print tidy correlations
+print_boxplot <- function(.y_var){
   
+  # convert strings to variable
+  y_var <- sym(.y_var) 
+ 
+  # unquote variables using {{}}
+  data_explore %>% 
+  ggplot(aes(x = price_category, y = {{y_var}},
+             fill = price_category, color = price_category)) +
+  geom_boxplot(alpha=0.4) 
+  
+}  
+
 ```
 
-Furthermore, the function `network_plot` outputs a nice network plot of our data in which 
-
-* variables that are more highly correlated appear closer together and are joined by stronger paths. 
-* Paths are also colored by their sign (blue for positive and red for negative). 
-* The proximity of the points are determined using clustering
-
+Obtain all of the names of the y-variables we want to use for our plots:
 
 ```{r}
 
-data_explore %>%
-  select(where(is.numeric)) %>%  
-  correlate() %>% 
-  network_plot(min_cor = .15)
+y_var <- 
+  data_explore %>% 
+  select(where(is.numeric), -longitude, - latitude) %>% 
+  variable.names() # obtain name
+
+```
+
+The map function applys the function `print_boxplot` to each element of our atomic vector `y_var` and returns the according plot:
+
+```{r}
+library(purrr)
+
+map(y_var, print_boxplot)
 
 ```
 
 
-Summary of our findings for the correlation analysis: 
+We can observe a difference in the price_category:
 
-* `median_income` has a strong positive correlation with `median_house_value`.
+* The differences between our two groups are quite small for `housing_median_age`, `total_room`, `total_bedrooms`, `population` and `households`
 
-* the new `bedrooms_per_room` attribute is negatively correlated with the `median_house_value`. Apparently houses with a lower bedroom/room ratio tend to be more expensive. 
+* We can observe a noticeable difference for our variables `median_income` and `bedrooms_per_room`
 
-* `rooms_per_household` is also a bit more informative than the total number of rooms (`total_rooms`) in a district. Obviously the larger the houses, the more expensive they are (positive correlation).
-
-* `population_per_household` is negatively correlated with our dependent variable.
+* `population_per_household` and `rooms_per_household` include some extreme values We first need to fix this before we can proceed with our interpretations for this variabels.
 
 
-As a last step in our correlation analysis, we check the statistical significance of Spearman's rank correlations. In our example, we only obtain significant p-values:
+Again, let's write a short function for this task and filter some of the extreme cases. We call the new function `print_boxplot_out`:
 
-```{r message=FALSE, warning=FALSE}
+```{r}
+print_boxplot_out <- function(.y_var_out){
+  
+  y_var <- sym(.y_var_out) 
+ 
+  data_explore %>% 
+  filter(rooms_per_household < 50, population_per_household < 20) %>% 
+  ggplot(aes(x = price_category, y = {{y_var}},
+             fill = price_category, color = price_category)) +
+  geom_boxplot(alpha=0.4) 
+  
+} 
 
-cor.test(data_explore$median_house_value, 
-         data_explore$population_per_household, 
-         method = "spearman", 
-         exact=FALSE)$p.value
+y_var_out <- 
+  data_explore %>% 
+  select(rooms_per_household, population_per_household) %>% 
+  variable.names() 
 
-cor.test(data_explore$median_house_value, 
-         data_explore$bedrooms_per_room, 
-         method = "spearman", 
-         exact=FALSE)$p.value
+map(y_var_out, print_boxplot_out)
 
-cor.test(data_explore$median_house_value, 
-         data_explore$rooms_per_household, 
-         method = "spearman", 
-         exact=FALSE)$p.value
-
-cor.test(data_explore$median_house_value, 
-         data_explore$population_per_household, 
-         method = "spearman", 
-         exact=FALSE)$p.value
 
 ```
 
-Consequently we will use this four numerical variables as well as `ocean_proximity` as predictors in our model.
 
-### Visual inspections
+Now we are able to recognize a small difference for `population_per_household`. `rooms_per_household` on the other hand is quite similar for both groups.
 
-Now let's analyze the choosen variables in more detail. The function `ggscatmat` from the package `GGally` creates a matrix with scatterplots, densities and correlations for numeric columns. In our code we choose an alpha level of 0.2 (for transparency).
+
+Additionally, we can use the function `ggscatmat` to create plots with our dependent variable as color column:
 
 ```{r }
 
-data_explore %>% 
-  select(median_house_value, ocean_proximity, 
-         median_income, bedrooms_per_room, rooms_per_household, 
-         population_per_household) %>% 
-  ggscatmat(corMethod = "spearman",
-            alpha=0.2)
-
-```
-
-We can also add a color column for our categorical variable `ocean_proximity` to get even more insights about the :
-
-```{r }
+library(GGally)
 
 data_explore %>% 
-  select(median_house_value, ocean_proximity, 
-         median_income, bedrooms_per_room, rooms_per_household, 
+  select(price_category, median_income, bedrooms_per_room, rooms_per_household, 
          population_per_household) %>% 
-  ggscatmat(color="ocean_proximity", # add a categorical variable
+  ggscatmat(color="price_category", 
             corMethod = "spearman",
             alpha=0.2)
 
 ```
 
-We can observe that our ocean proximity variable is indeed a good predictor for our different median house values. Another promising attribute to predict the median house value is the median income, so let’s zoom in:
+
+There are a few things you might notice in these histograms:
+
+* Note that our attributes have very different scales. We will take care of this issue later in data preparation, when we use feature scaling (data normalization).
+
+* The histograms are tail-heavy: they extend much farther to the right of the median than to the left. This may make it a bit harder for some Machine Learning algorithms to detect patterns. We will transform these attributes later on to have more bell-shaped distributions. For our right-skewed data (i.e., tail is on the right, also called positive skew), common transformations include square root and log (we will use the log). 
+
+
+As a result of our data exploration, we will include the numerical variables 
+
+* `median_income`, 
+* `bedrooms_per_room` and 
+* `population_per_household` 
+
+as predictors in our model. 
+
+
+### Categorical variables
+
+Now let's analyze the relationship between our categorical variables `ocean proximity` and `price_category`. We start with a simple count.
 
 ```{r}
+library(gt)
 
 data_explore %>% 
-  ggplot(aes(median_income, median_house_value)) +
-  geom_jitter(color = "steelblue", alpha = 0.2) + 
-  xlab("Median income") +
-  ylab("Median house value") +
-  scale_y_continuous(labels = scales::dollar)
+  count(price_category, ocean_proximity) %>% 
+  group_by(price_category) %>% 
+  mutate(percent = n / sum(n) ) %>% 
+  gt() %>% 
+    tab_header(
+    title = "California median house prices",
+    subtitle = "Districts above and below 150.000$"
+  ) %>% 
+  cols_label(
+    ocean_proximity = "Ocean Proximity",
+    n = "Districts",
+    percent = "Percent"
+  ) %>% 
+  fmt_number(
+    columns = vars(n),
+    suffixing = TRUE
+  ) %>% 
+  fmt_percent(
+    columns = vars(percent),
+    decimal = 2
+  ) 
+  
 
 ```
 
-This plot reveals a few things. First, the correlation is indeed very strong; you can clearly see the upward trend, and the points are not too dispersed. Second, the price cap that we noticed earlier is clearly visible as a horizontal line at 500,000 dollars. But this plot reveals other less obvious straight lines: a horizontal line around 450,000 dollars, another around 350,000 dollars, perhaps one around $280,000 dollars, and a few more below that. Hence, in our data preparation phase we will remove districts with 500,000 dollars to prevent our algorithms from learning to reproduce these data quirks.
+The function `geom_bin2d()` creats a heatmap by counting the number of cases in each group, and then mapping the number of cases to each subgroub's fill.  
+
+```{r}
+data_explore %>%
+  ggplot(aes(price_category, ocean_proximity)) +
+  geom_bin2d() +
+  scale_fill_continuous(type = "viridis") 
+```
+
+We can observe that most districts with a median house price above 150,000 have an ocean proximity below 1 hour. On the other hand, districts below that threshold are typically inland. Hence, ocean proximity is indeed a good predictor for our two different median house value categories. 
+
 
 # Data preparation
 
@@ -586,16 +645,15 @@ We will want to use our recipe across several steps as we train and test our mod
 
 ## Data preparation
 
-Before we create our `recipes`, we first select the variables which we will use in the model. We also remove specific cases with a price in median house value equal to or greater as 500000 dollars. Note that we keep `longitude` and `latitude` to be able to map the data in a later stage but we will not use the variables in our model. 
+Before we create our `recipes`, we first select the variables which we will use in the model.  Note that we keep `longitude` and `latitude` to be able to map the data in a later stage but we will not use the variables in our model. 
 
 ```{r}
 
 housing_df_new <-
   housing_df %>% 
-  filter(median_house_value < 500000) %>% # only use houses with a value below 500000
   select( # select our predictors
     longitude, latitude, 
-    median_house_value, 
+    price_category, 
     median_income, 
     ocean_proximity, 
     bedrooms_per_room, 
@@ -615,8 +673,7 @@ set.seed(123)
 
 data_split <- initial_split(housing_df_new, # updated data
                            prop = 3/4, 
-                           strata = median_house_value, 
-                           breaks = 4)
+                           strata = price_category)
 
 train_data <- training(data_split) 
 test_data <- testing(data_split)
@@ -628,10 +685,10 @@ test_data <- testing(data_split)
 The type of data preprocessing is dependent on the data and the type of model being fit. The excellent book "Tidy Modeling with R" provides an [appendix with recommendations for baseline levels of preprocessing](https://www.tmwr.org/pre-proc-table.html) that are needed for various model functions (@Kuhn2021) 
 
 
-Let’s create a base `recipe` for all of our regression models (for one of the models, we need to add a new recipe step at a later stage). Note that the sequence of steps matter:
+Let’s create a base `recipe` for all of our classification models. Note that the sequence of steps matter:
 
 * The `recipe()` function has two arguments: 
- * *A formula*. Any variable on the left-hand side of the tilde (`~`) is considered the model outcome (here, `median_house_value`). On the right-hand side of the tilde are the predictors. Variables may be listed by name (separated by a `+`), or you can use the dot (`.`) to indicate all other variables as predictors. 
+ * *A formula*. Any variable on the left-hand side of the tilde (`~`) is considered the model outcome (here, `price_category`). On the right-hand side of the tilde are the predictors. Variables may be listed by name (separated by a `+`), or you can use the dot (`.`) to indicate all other variables as predictors. 
  * *The data*. A recipe is associated with the data set used to create the model. This will typically be the training set, so `data = train_data` here. 
 
 
@@ -647,7 +704,6 @@ Let’s create a base `recipe` for all of our regression models (for one of the 
 
 * `step_dummy()` converts our factor column `ocean_proximity` into numeric binary (0 and 1) variables.
 
-
 * `step_zv()`: removes any numeric variables that have zero variance.
 
 * `step_corr()`: will remove predictor variables that have large correlations with other predictor variables.
@@ -656,12 +712,12 @@ Let’s create a base `recipe` for all of our regression models (for one of the 
 ```{r}
 
 housing_rec <-
-  recipe(median_house_value ~ .,
+  recipe(price_category ~ .,
          data = train_data) %>%
   update_role(longitude, latitude, 
               new_role = "ID") %>% 
   step_log(
-    median_house_value, median_income,
+    median_income,
     bedrooms_per_room, rooms_per_household, 
     population_per_household
     ) %>% 
@@ -669,7 +725,7 @@ housing_rec <-
   step_novel(all_nominal(), -all_outcomes()) %>%
   step_normalize(all_numeric(), -all_outcomes(), 
                  -longitude, -latitude) %>% 
-  step_dummy(all_nominal()) %>%
+  step_dummy(all_nominal(), -all_outcomes()) %>%
   step_zv(all_numeric(), -all_outcomes()) %>%
   step_corr(all_predictors(), threshold = 0.7, method = "spearman") 
 
@@ -703,11 +759,12 @@ glimpse(prepped_data)
 
 ```
 
-Visualize the data:
+
+Visualize the numerical data:
 
 ```{r}
 prepped_data %>% 
-  select(median_house_value, 
+  select(price_category, 
          median_income, 
          rooms_per_household, 
          population_per_household) %>% 
@@ -739,8 +796,7 @@ set.seed(100)
 cv_folds <-
  vfold_cv(train_data, 
           v = 5, # number of folds
-          strata = median_house_value,
-          breaks = 4) 
+          strata = price_category) 
 
 ```
 
@@ -758,38 +814,20 @@ The process of specifying our models is always as follows:
 
 You can choose the `model type` and `engine` from this [list](https://www.tidymodels.org/find/parsnip/).
 
-### Lasso regression 
+### Logistic regression 
 
 ```{r}
 
-lasso_spec <- # your model specification
-  linear_reg(penalty = 0.1, mixture = 1) %>%  # model type and some options
-  set_engine(engine = "glmnet") %>%  # model engine
-  set_mode("regression") # model mode
+log_spec <- # your model specification
+  logistic_reg() %>%  # model type
+  set_engine(engine = "glm") %>%  # model engine
+  set_mode("classification") # model mode
 
 # Show your model specification
-lasso_spec
+log_spec
 
 ```
 
-* `penalty`: The total amount of regularization in the model. Higher values imply a higher penalty. If you choose a penalty of 0 you fit a standard linear regression model. 
-
-* `mixture`: The mixture amounts of different types of regularization. A number between zero and one (inclusive) that is the proportion of L1 regularization (i.e. lasso) in the model. When mixture = 1, it is a pure lasso model while mixture = 0 indicates that ridge regression is being used (this works only for engines "glmnet" and "spark").
-
-Note that for the lasso regression to work properly it is very important to always add a data normalization step. 
-
-### Natural spline  
-
-```{r}
-
-spline_spec <- 
-  linear_reg() %>%  
-  set_engine(engine = "lm") %>%  
-  set_mode("regression")
-
-```
-
-To use this model correctly, we also need to add a data normalization step as well as a step to declare the degree of freedom in our model. We will include the degrees of freedom at a later step (when we create the workflows).
 
 ### Random forest
 
@@ -799,7 +837,7 @@ library(ranger)
 rf_spec <- 
   rand_forest() %>% 
   set_engine("ranger") %>% 
-  set_mode("regression")
+  set_mode("classification")
 
 ```
 
@@ -811,7 +849,7 @@ library(xgboost)
 xgb_spec <- 
   boost_tree() %>% 
   set_engine("xgboost") %>% 
-  set_mode("regression") 
+  set_mode("classification") 
 
 ```
 
@@ -822,7 +860,7 @@ xgb_spec <-
 knn_spec <- 
   nearest_neighbor(neighbors = 4) %>% # we can adjust the number of neighbors 
   set_engine("kknn") %>% 
-  set_mode("regression") 
+  set_mode("classification") 
 
 ```
 
@@ -831,45 +869,22 @@ knn_spec <-
 
 To combine the data preparation recipe with the model building, we use the package [workflows](https://workflows.tidymodels.org). A workflow is an object that can bundle together your pre-processing recipe, modeling, and even post-processing requests (like calculating the RMSE). 
 
-### Lasso
+### Logistic regression
 
 Bundle recipe and model with `workflows`:
 
 ```{r}
 
-lasso_wflow <- # new workflow object
+log_wflow <- # new workflow object
  workflow() %>% # use workflow function
  add_recipe(housing_rec) %>%   # use the new recipe
- add_model(lasso_spec)   # add your model spec
+ add_model(log_spec)   # add your model spec
 
+
+# show object
+log_wflow
 ```
 
-
-### Natural spline
-
-We need to declare the degrees of freedom -with `step_ns()`- for our natural spline. In our example, we just add the new step to our `housing_rec` recipe and create a new recipe which we will only use for ourse natural spline.
-
-```{r}
-library(splines)
-
-housing_rec_spline <- 
-  housing_rec %>%  
-  step_ns(all_predictors(), deg_free = 3) # natural spline
-
-```
-
-The higher the degree of freedom, the more complex the resulting model.
-
-Now we bundle the recipe and our model:
-
-```{r}
-
-spline_wflow <- 
- workflow() %>% 
- add_recipe(housing_rec_spline) %>%   # use the spline recipe
- add_model(spline_spec) 
-
-```
 
 
 ### Random forest
@@ -918,30 +933,32 @@ knn_wflow <-
 
 Now we can use our validation set (`cv_folds`) to estimate the performance of our models using the `fit_resamples()` function to fit the models on each of the folds and store the results. 
 
-Note that `fit_resamples()` will fit our model to each resample and evaluate on the heldout set from each resample. The function is usually only used for computing performance metrics across some set of resamples to evaluate our models (like RMSE) - the models are not even stored. However, in our example we save the predictions in order to visualize the model fit and residuals with `control_resamples(save_pred = TRUE)`.
+Note that `fit_resamples()` will fit our model to each resample and evaluate on the heldout set from each resample. The function is usually only used for computing performance metrics across some set of resamples to evaluate our models (like accuracy) - the models are not even stored. However, in our example we save the predictions in order to visualize the model fit and residuals with `control_resamples(save_pred = TRUE)`.
 
 Finally, we collect the performance metrics with `collect_metrics()` and pick the model that does best on the validation set.
 
-### Lasso regression
+### Logistic regression
 
 
 ```{r}
 
 set.seed(100)
 
-lasso_res <- 
-  lasso_wflow %>% # use workflow object
+log_res <- 
+  log_wflow %>% # use workflow object
   fit_resamples(resamples = cv_folds,
                 control = control_resamples(save_pred = TRUE) # save predictions
     )
 
 ```
 
+#### Accuracy and AUC
+
 Show average performance over all folds:
 
 ```{r}
 
-lasso_res %>%  collect_metrics(summarize = TRUE)
+log_res %>%  collect_metrics(summarize = TRUE)
 
 ```
 
@@ -949,70 +966,78 @@ Show performance for every single fold:
 
 ```{r}
 
-lasso_res %>%  collect_metrics(summarize = FALSE)
+log_res %>%  collect_metrics(summarize = FALSE)
 
 ```
 
-To assess the model predictions, we plot the predictions on the y-axis and the real median house value at the x-axis. Note that the red line is not our model. If our model would have made no mistakes at all, all points would lie on the red diagonal line (where the prediction equals the real value). 
+
+#### Collect predictions
+
+To obtain the actual model predictions, we use the function `collect_predictions` and save the result as `log_pred`:
+
 
 ```{r}
 
-assess_res <- collect_predictions(lasso_res)
-
-assess_res %>% 
-  ggplot(aes(x = median_house_value, y = .pred)) + 
-  geom_point(alpha = .15) +
-  geom_abline(col = "red") + 
-  coord_obs_pred() + 
-  ylab("Predicted")
+log_pred <- 
+  log_res %>%
+  collect_predictions()
 
 ```
 
-Let`s look at the 10 districts where our model produced the greatest residuals: 
+
+#### Confusion matrix
+
+Now we can use the predictions to create a *confusion matrix*:
 
 ```{r}
 
-wrongest_prediction <- 
-  assess_res %>% 
-  mutate(residual = median_house_value - .pred) %>% 
-  arrange(desc(abs(residual))) %>% 
-  slice_head(n = 10)
-
-wrongest_prediction
+log_pred %>%
+  conf_mat(price_category, .pred_class)
 
 ```
 
-Show the observations in the training data.
+
+#### Recall, precision, F1
+
+Obtain recall, precision and F1-Score:
 
 ```{r}
 
-train_data %>% 
-  dplyr::slice(wrongest_prediction$.row) 
+# recall
+log_res %>%
+  collect_predictions() %>%
+  recall(price_category, .pred_class)
+
+# precision
+log_res %>%
+  collect_predictions() %>%
+  precision(price_category, .pred_class)
+
+# F1 Score
+log_res %>%
+  collect_predictions() %>%
+  f_meas(price_category, .pred_class)
 
 ```
 
-In this tutorial, we don't further investigate the reasons for the wrong predictions. In reality, we would check wether some of the districts are outliers in comparision to the rest of our data and we would need to decide if we should drop some of the cases from the data (if there are good reasons to do so).    
 
-### Natural spline
+#### Probability distributions
 
-We don't repeat all of the steps shown in lasso regression and just focus on the performance metrics.
+Plot predicted probability distributions for out two classes.
+
 
 ```{r}
-
-spline_res <-
-  spline_wflow %>% 
-  fit_resamples(
-    resamples = cv_folds,
-    control = control_resamples(save_pred = TRUE)
-    )
-
-spline_res %>%  collect_metrics(summarize = TRUE)
-
+log_res %>%
+  collect_predictions() %>% 
+  ggplot() +
+  geom_density(aes(x = .pred_above, fill = price_category), 
+               alpha = 0.5)
 ```
+
 
 ### Random forest
 
-We don't repeat all of the steps shown in lasso regression and just focus on the performance metrics.
+We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
 
 ```{r}
 
@@ -1027,10 +1052,9 @@ rf_res %>%  collect_metrics(summarize = TRUE)
 
 ```
 
-
 ### XGBoost
 
-We don't repeat all of the steps shown in lasso regression and just focus on the performance metrics.
+We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
 
 ```{r}
 
@@ -1048,7 +1072,7 @@ xgb_res %>% collect_metrics(summarize = TRUE)
 
 ### K-nearest neighbor
 
-We don't repeat all of the steps shown in lasso regression and just focus on the performance metrics.
+We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
 
 ```{r}
 
@@ -1069,37 +1093,32 @@ Extract the RMSE from our models to compare them:
 
 ```{r}
 
-lasso_rmse <- 
-  lasso_res %>% 
-  collect_metrics(summarise = TRUE) %>%
-  mutate(model = "lasso")
 
-spline_rmse <- 
-  spline_res %>% 
+log_metrics <- 
+  log_res %>% 
   collect_metrics(summarise = TRUE) %>%
-  mutate(model = "spline")
+  mutate(model = "logistic")
 
-rf_rmse <- 
+rf_metrics <- 
   rf_res %>% 
   collect_metrics(summarise = TRUE) %>%
   mutate(model = "random forest")
 
-xgb_rmse <- 
+xgb_metrics <- 
   xgb_res %>% 
   collect_metrics(summarise = TRUE) %>%
   mutate(model = "XGBoost")
 
-knn_rmse <- 
+knn_metrics <- 
   knn_res %>% 
   collect_metrics(summarise = TRUE) %>%
   mutate(model = "Knn")
 
 # create dataframe with all models
-model_compare <- bind_rows(lasso_rmse,
-                           spline_rmse,
-                           rf_rmse,
-                           xgb_rmse,
-                           knn_rmse) 
+model_compare <- bind_rows(log_metrics,
+                           rf_metrics,
+                           xgb_metrics,
+                           knn_metrics) 
 
 # change data structure
 model_comp <- 
@@ -1107,30 +1126,30 @@ model_comp <-
   select(model, .metric, mean, std_err) %>% 
   pivot_wider(names_from = .metric, values_from = c(mean, std_err)) 
 
-# show rmse 
+# show accuracy 
 model_comp %>% 
-  arrange(mean_rmse) %>% 
-  mutate(model = fct_reorder(model, mean_rmse)) %>%
-  ggplot(aes(model, mean_rmse, fill=model)) +
+  arrange(mean_accuracy) %>% 
+  mutate(model = fct_reorder(model, mean_accuracy)) %>%
+  ggplot(aes(model, mean_accuracy, fill=model)) +
   geom_col() +
   scale_fill_brewer(palette = "Blues")
 
-# show rsq 
+# show AUC 
 model_comp %>% 
-  arrange(mean_rsq) %>% 
-  mutate(model = fct_reorder(model, desc(mean_rsq))) %>%
-  ggplot(aes(model, mean_rsq, fill=model)) +
+  arrange(mean_roc_auc) %>% 
+  mutate(model = fct_reorder(model, mean_roc_auc)) %>%
+  ggplot(aes(model, mean_roc_auc, fill=model)) +
   geom_col() +
   scale_fill_brewer(palette = "Blues")
   
 ```
 
-Note that the model results are quite similar. 
+Note that the model results are all quite similar. 
 
 ```{r}
-# find minimum rmse
+# find maximum accuracy
 model_comp %>% 
-  slice_min(mean_rmse)
+  slice_max(mean_accuracy)
 ```
 
 Now it's time to fit the best model (in our case the XGBoost model) one last time to the full *training set* and evaluate the resulting final model on the *test set*.
@@ -1143,10 +1162,11 @@ Tidymodels provides the function [`last_fit()`](https://tune.tidymodels.org/refe
 
 last_fit_xgb <- last_fit(xgb_wflow, split = data_split)
 
-# Show RMSE and RSQ
+# Show performance metrics
 last_fit_xgb %>% 
   collect_metrics()
 
 ```
 
 And this is our final result. Remember that if a model fit to the training dataset also fits the test dataset well, minimal *overfitting* has taken place. This seems to be also the case in our example.
+

@@ -8,7 +8,8 @@ rmd_files: [
   "index.Rmd",
   "01-crispdm.Rmd",
   "02-regression.Rmd",
-  "03-references.Rmd"
+  "03-classification.Rmd",
+  "04-references.Rmd"
   ]
 
 before_chapter_script: "_common.R"
