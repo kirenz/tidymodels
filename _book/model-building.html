@@ -41,7 +41,6 @@
 <li><a class="" href="data-understanding-1.html"><span class="header-section-number">4</span> Data understanding</a></li>
 <li><a class="" href="data-preparation-1.html"><span class="header-section-number">5</span> Data preparation</a></li>
 <li><a class="active" href="model-building.html"><span class="header-section-number">6</span> Model building</a></li>
-<li><a class="" href="last-fit-and-evaluation-on-test-set.html"><span class="header-section-number">7</span> Last fit and evaluation on test set</a></li>
 <li><a class="" href="references.html">References</a></li>
 </ul>
 
@@ -321,6 +320,11 @@
     resamples <span class="op">=</span> <span class="va">cv_folds</span>,
     control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
     <span class="op">)</span>
+<span class="co">#&gt; ! Fold1: preprocessor 1/1, model 1/1 (predictions): prediction from a rank-defici...</span>
+<span class="co">#&gt; ! Fold2: preprocessor 1/1, model 1/1 (predictions): prediction from a rank-defici...</span>
+<span class="co">#&gt; ! Fold3: preprocessor 1/1, model 1/1 (predictions): prediction from a rank-defici...</span>
+<span class="co">#&gt; ! Fold4: preprocessor 1/1, model 1/1 (predictions): prediction from a rank-defici...</span>
+<span class="co">#&gt; x Fold5: preprocessor 1/1: Error in qr.default(t(const)): NA/NaN/Inf in externem ...</span>
 
 <span class="va">spline_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
 <span class="co">#&gt; # A tibble: 2 x 6</span>
@@ -345,10 +349,10 @@
 
 <span class="va">rf_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
 <span class="co">#&gt; # A tibble: 2 x 6</span>
-<span class="co">#&gt;   .metric .estimator  mean     n std_err .config             </span>
-<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               </span>
-<span class="co">#&gt; 1 rmse    standard   0.309     5 0.00135 Preprocessor1_Model1</span>
-<span class="co">#&gt; 2 rsq     standard   0.673     5 0.00144 Preprocessor1_Model1</span></code></pre></div>
+<span class="co">#&gt;   .metric .estimator  mean     n  std_err .config             </span>
+<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;    &lt;dbl&gt; &lt;chr&gt;               </span>
+<span class="co">#&gt; 1 rmse    standard   0.309     5 0.000997 Preprocessor1_Model1</span>
+<span class="co">#&gt; 2 rsq     standard   0.673     5 0.00130  Preprocessor1_Model1</span></code></pre></div>
 </div>
 <div id="xgboost-1" class="section level3" number="6.3.4">
 <h3>
@@ -466,10 +470,31 @@
 <p>Now it’s time to fit the best model (in our case the XGBoost model) one last time to the full <em>training set</em> and evaluate the resulting final model on the <em>test set</em>.</p>
 </div>
 </div>
+<div id="last-fit-and-evaluation-on-test-set" class="section level2" number="6.4">
+<h2>
+<span class="header-section-number">6.4</span> Last fit and evaluation on test set<a class="anchor" aria-label="anchor" href="#last-fit-and-evaluation-on-test-set"><i class="fas fa-link"></i></a>
+</h2>
+<p>Tidymodels provides the function <a href="https://tune.tidymodels.org/reference/last_fit.html"><code>last_fit()</code></a> which fits a model to the <em>training data</em> and evaluates it on the <em>test set</em>. We just need to provide the workflow object of the best model as well as the <strong>data split</strong> object (not the training data).</p>
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">last_fit_xgb</span> <span class="op">&lt;-</span> <span class="fu">last_fit</span><span class="op">(</span><span class="va">xgb_wflow</span>, split <span class="op">=</span> <span class="va">data_split</span><span class="op">)</span>
+
+<span class="co"># Show RMSE and RSQ</span>
+<span class="va">last_fit_xgb</span> <span class="op">%&gt;%</span> 
+  <span class="fu">collect_metrics</span><span class="op">(</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 2 x 4</span>
+<span class="co">#&gt;   .metric .estimator .estimate .config             </span>
+<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               </span>
+<span class="co">#&gt; 1 rmse    standard       0.305 Preprocessor1_Model1</span>
+<span class="co">#&gt; 2 rsq     standard       0.682 Preprocessor1_Model1</span></code></pre></div>
+<p>And this is our final result. Remember that if a model fit to the training dataset also fits the test dataset well, minimal <em>overfitting</em> has taken place. This seems to be also the case in our example.</p>
+<p>If the model result is good enogh to be used in our project can only be decided by people with expertise in the domain of housing prices.</p>
+
+</div>
 </div>
   <div class="chapter-nav">
 <div class="prev"><a href="data-preparation-1.html"><span class="header-section-number">5</span> Data preparation</a></div>
-<div class="next"><a href="last-fit-and-evaluation-on-test-set.html"><span class="header-section-number">7</span> Last fit and evaluation on test set</a></div>
+<div class="next"><a href="references.html">References</a></div>
 </div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
     <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
       <ul class="nav navbar-nav">
@@ -502,6 +527,7 @@
 <li><a class="nav-link" href="#compare-models"><span class="header-section-number">6.3.6</span> Compare models</a></li>
 </ul>
 </li>
+<li><a class="nav-link" href="#last-fit-and-evaluation-on-test-set"><span class="header-section-number">6.4</span> Last fit and evaluation on test set</a></li>
 </ul>
 
       <div class="book-extra">
@@ -519,7 +545,7 @@
 <footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
 
   <div class="col-12 col-md-6 mt-3">
-    <p>"<strong>Introduction to Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-09.</p>
+    <p>"<strong>Introduction to Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-10.</p>
   </div>
 
   <div class="col-12 col-md-6 mt-3">

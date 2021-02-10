@@ -41,7 +41,6 @@
 <li><a class="" href="data-understanding-1.html"><span class="header-section-number">4</span> Data understanding</a></li>
 <li><a class="" href="data-preparation-1.html"><span class="header-section-number">5</span> Data preparation</a></li>
 <li><a class="" href="model-building.html"><span class="header-section-number">6</span> Model building</a></li>
-<li><a class="" href="last-fit-and-evaluation-on-test-set.html"><span class="header-section-number">7</span> Last fit and evaluation on test set</a></li>
 <li><a class="" href="references.html">References</a></li>
 </ul>
 
@@ -60,7 +59,12 @@
 <li>natural spline,</li>
 <li>random forest,</li>
 <li>XGBoost (extreme gradient boosted trees)</li>
+<li>K-nearest neighbor</li>
 </ul>
+<p><em>Lasso</em></p>
+<p>Lasso performs a so called L1 regularization (a process of introducing additional information in order to prevent overfitting), i.e. adds penalty equivalent to absolute value of the magnitude of coefficients. See James2000 for more details about lasso regression.</p>
+<p><em>Natural spline</em></p>
+<p>A natural spline is an advancement of a piecewise polynomial regression spline which involves fitting separate low-degree polynomials over different regions of our predictor space X. In particular, a natural spline is a regression spline with additional boundary constraints: the function is required to be linear at the boundary (in the region where X is smaller than the smallest knot, or larger than the largest knot). This additional constraint means that natural splines generally produce more stable estimates at the boundaries. See James2000 for more details about piecewise polynomial regression splines and natural splines.</p>
 </div>
   <div class="chapter-nav">
 <div class="prev"><a href="crisp-dm.html"><span class="header-section-number">1</span> CRISP-DM</a></div>
@@ -84,7 +88,7 @@
 <footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
 
   <div class="col-12 col-md-6 mt-3">
-    <p>"<strong>Introduction to Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-09.</p>
+    <p>"<strong>Introduction to Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-10.</p>
   </div>
 
   <div class="col-12 col-md-6 mt-3">

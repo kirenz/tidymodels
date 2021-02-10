@@ -41,7 +41,6 @@
 <li><a class="active" href="data-understanding-1.html"><span class="header-section-number">4</span> Data understanding</a></li>
 <li><a class="" href="data-preparation-1.html"><span class="header-section-number">5</span> Data preparation</a></li>
 <li><a class="" href="model-building.html"><span class="header-section-number">6</span> Model building</a></li>
-<li><a class="" href="last-fit-and-evaluation-on-test-set.html"><span class="header-section-number">7</span> Last fit and evaluation on test set</a></li>
 <li><a class="" href="references.html">References</a></li>
 </ul>
 
@@ -75,7 +74,21 @@
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span>
 
 <span class="va">LINK</span> <span class="op">&lt;-</span> <span class="st">"https://raw.githubusercontent.com/kirenz/datasets/master/housing_unclean.csv"</span>
-<span class="va">housing_df</span> <span class="op">&lt;-</span> <span class="fu">read_csv</span><span class="op">(</span><span class="va">LINK</span><span class="op">)</span></code></pre></div>
+<span class="va">housing_df</span> <span class="op">&lt;-</span> <span class="fu">read_csv</span><span class="op">(</span><span class="va">LINK</span><span class="op">)</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; ── Column specification ────────────────────────────────────────────────────────</span>
+<span class="co">#&gt; cols(</span>
+<span class="co">#&gt;   longitude = col_double(),</span>
+<span class="co">#&gt;   latitude = col_double(),</span>
+<span class="co">#&gt;   housing_median_age = col_character(),</span>
+<span class="co">#&gt;   total_rooms = col_double(),</span>
+<span class="co">#&gt;   total_bedrooms = col_double(),</span>
+<span class="co">#&gt;   population = col_double(),</span>
+<span class="co">#&gt;   households = col_double(),</span>
+<span class="co">#&gt;   median_income = col_double(),</span>
+<span class="co">#&gt;   median_house_value = col_character(),</span>
+<span class="co">#&gt;   ocean_proximity = col_character()</span>
+<span class="co">#&gt; )</span></code></pre></div>
 </div>
 <div id="clean-data" class="section level2" number="4.2">
 <h2>
@@ -479,7 +492,8 @@
     <span class="va">median_house_value</span>, <span class="va">housing_median_age</span>, 
     <span class="va">median_income</span>, <span class="va">bedrooms_per_room</span>, <span class="va">rooms_per_household</span>, 
     <span class="va">population_per_household</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu"><a href="https://ggobi.github.io/ggally/reference/ggscatmat.html">ggscatmat</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></code></pre></div>
+  <span class="fu"><a href="https://ggobi.github.io/ggally/reference/ggscatmat.html">ggscatmat</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span>
+<span class="co">#&gt; Warning: Removed 207 rows containing non-finite values (stat_density).</span></code></pre></div>
 <div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-15-1.png" width="70%" style="display: block; margin: auto;"></div>
 <p>Another option is to use <code>ggpairs</code>, where we even can integrate our categorical variable <code>ocean_proximity</code> in the output:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
@@ -491,7 +505,37 @@
     <span class="va">median_income</span>, <span class="va">bedrooms_per_room</span>, <span class="va">rooms_per_household</span>, 
     <span class="va">population_per_household</span>,
     <span class="va">ocean_proximity</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu"><a href="https://ggobi.github.io/ggally/reference/ggpairs.html">ggpairs</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
+  <span class="fu"><a href="https://ggobi.github.io/ggally/reference/ggpairs.html">ggpairs</a></span><span class="op">(</span><span class="op">)</span>
+<span class="co">#&gt; Warning in ggally_statistic(data = data, mapping = mapping, na.rm = na.rm, :</span>
+<span class="co">#&gt; Removed 207 rows containing missing values</span>
+
+<span class="co">#&gt; Warning in ggally_statistic(data = data, mapping = mapping, na.rm = na.rm, :</span>
+<span class="co">#&gt; Removed 207 rows containing missing values</span>
+
+<span class="co">#&gt; Warning in ggally_statistic(data = data, mapping = mapping, na.rm = na.rm, :</span>
+<span class="co">#&gt; Removed 207 rows containing missing values</span>
+<span class="co">#&gt; Warning: Removed 207 rows containing missing values (geom_point).</span>
+
+<span class="co">#&gt; Warning: Removed 207 rows containing missing values (geom_point).</span>
+
+<span class="co">#&gt; Warning: Removed 207 rows containing missing values (geom_point).</span>
+<span class="co">#&gt; Warning: Removed 207 rows containing non-finite values (stat_density).</span>
+<span class="co">#&gt; Warning in ggally_statistic(data = data, mapping = mapping, na.rm = na.rm, :</span>
+<span class="co">#&gt; Removed 207 rows containing missing values</span>
+
+<span class="co">#&gt; Warning in ggally_statistic(data = data, mapping = mapping, na.rm = na.rm, :</span>
+<span class="co">#&gt; Removed 207 rows containing missing values</span>
+<span class="co">#&gt; Warning: Removed 207 rows containing non-finite values (stat_boxplot).</span>
+<span class="co">#&gt; Warning: Removed 207 rows containing missing values (geom_point).</span>
+
+<span class="co">#&gt; Warning: Removed 207 rows containing missing values (geom_point).</span>
+<span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span>
+<span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span>
+<span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span>
+<span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span>
+<span class="co">#&gt; Warning: Removed 207 rows containing non-finite values (stat_bin).</span>
+<span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span>
+<span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></code></pre></div>
 <div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-16-1.png" width="70%" style="display: block; margin: auto;"></div>
 <p>There are a few things you might notice in these histograms:</p>
 <ul>
@@ -611,7 +655,33 @@ Figure 4.4: California housing_df prices
        size <span class="op">=</span> <span class="va">population</span>,
        alpha <span class="op">=</span> <span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">scale_colour_gradientn</span><span class="op">(</span>colours<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rev.html">rev</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html">rainbow</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">scale_alpha</span><span class="op">(</span>guide <span class="op">=</span> <span class="st">'none'</span><span class="op">)</span> <span class="co"># don't show legend for alpha</span></code></pre></div>
+  <span class="fu">scale_alpha</span><span class="op">(</span>guide <span class="op">=</span> <span class="st">'none'</span><span class="op">)</span> <span class="co"># don't show legend for alpha</span>
+<span class="co">#&gt; Using zoom = 7...</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/19/47.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/20/47.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/21/47.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/22/47.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/23/47.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/19/48.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/20/48.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/21/48.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/22/48.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/23/48.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/19/49.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/20/49.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/21/49.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/22/49.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/23/49.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/19/50.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/20/50.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/21/50.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/22/50.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/23/50.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/19/51.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/20/51.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/21/51.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/22/51.png</span>
+<span class="co">#&gt; Source : http://tile.stamen.com/terrain/7/23/51.png</span></code></pre></div>
 <div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-19-1.png" width="70%" style="display: block; margin: auto;"></div>
 <p>This image tells you that the housing prices are very much related to the location (e.g., close to the ocean) and to the population density. Hence our <code>ocean_proximity</code> variable may be a useful predictor of median housing prices, although in Northern California the housing prices in coastal districts are not too high, so it is not a simple rule.</p>
 </div>
@@ -655,6 +725,9 @@ Figure 4.4: California housing_df prices
   <span class="va">data_explore</span> <span class="op">%&gt;%</span>
   <span class="fu">select</span><span class="op">(</span><span class="fu">where</span><span class="op">(</span><span class="va">is.numeric</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu"><a href="https://corrr.tidymodels.org/reference/correlate.html">correlate</a></span><span class="op">(</span>method <span class="op">=</span> <span class="st">"spearman"</span>, use <span class="op">=</span> <span class="st">"pairwise.complete.obs"</span><span class="op">)</span> 
+<span class="co">#&gt; </span>
+<span class="co">#&gt; Correlation method: 'spearman'</span>
+<span class="co">#&gt; Missing treated using: 'pairwise.complete.obs'</span>
 
 <span class="co"># show correlations</span>
 <span class="va">cor_res</span> <span class="op">%&gt;%</span> 
@@ -685,7 +758,10 @@ Figure 4.4: California housing_df prices
 <span class="va">data_explore</span> <span class="op">%&gt;%</span>
   <span class="fu">select</span><span class="op">(</span><span class="fu">where</span><span class="op">(</span><span class="va">is.numeric</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>  
   <span class="fu"><a href="https://corrr.tidymodels.org/reference/correlate.html">correlate</a></span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu"><a href="https://corrr.tidymodels.org/reference/network_plot.html">network_plot</a></span><span class="op">(</span>min_cor <span class="op">=</span> <span class="fl">.15</span><span class="op">)</span></code></pre></div>
+  <span class="fu"><a href="https://corrr.tidymodels.org/reference/network_plot.html">network_plot</a></span><span class="op">(</span>min_cor <span class="op">=</span> <span class="fl">.15</span><span class="op">)</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; Correlation method: 'pearson'</span>
+<span class="co">#&gt; Missing treated using: 'pairwise.complete.obs'</span></code></pre></div>
 <div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-23-1.png" width="70%" style="display: block; margin: auto;"></div>
 <p>Summary of our findings for the correlation analysis:</p>
 <ul>
@@ -734,7 +810,10 @@ Figure 4.4: California housing_df prices
          <span class="va">median_income</span>, <span class="va">bedrooms_per_room</span>, <span class="va">rooms_per_household</span>, 
          <span class="va">population_per_household</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu"><a href="https://ggobi.github.io/ggally/reference/ggscatmat.html">ggscatmat</a></span><span class="op">(</span>corMethod <span class="op">=</span> <span class="st">"spearman"</span>,
-            alpha<span class="op">=</span><span class="fl">0.2</span><span class="op">)</span></code></pre></div>
+            alpha<span class="op">=</span><span class="fl">0.2</span><span class="op">)</span>
+<span class="co">#&gt; Warning in ggscatmat(., corMethod = "spearman", alpha = 0.2): Factor variables</span>
+<span class="co">#&gt; are omitted in plot</span>
+<span class="co">#&gt; Warning: Removed 160 rows containing non-finite values (stat_density).</span></code></pre></div>
 <div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-25-1.png" width="70%" style="display: block; margin: auto;"></div>
 <p>We can also add a color column for our categorical variable <code>ocean_proximity</code> to get even more insights about the :</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
@@ -745,7 +824,10 @@ Figure 4.4: California housing_df prices
          <span class="va">population_per_household</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu"><a href="https://ggobi.github.io/ggally/reference/ggscatmat.html">ggscatmat</a></span><span class="op">(</span>color<span class="op">=</span><span class="st">"ocean_proximity"</span>, <span class="co"># add a categorical variable</span>
             corMethod <span class="op">=</span> <span class="st">"spearman"</span>,
-            alpha<span class="op">=</span><span class="fl">0.2</span><span class="op">)</span></code></pre></div>
+            alpha<span class="op">=</span><span class="fl">0.2</span><span class="op">)</span>
+<span class="co">#&gt; Warning in ggscatmat(., color = "ocean_proximity", corMethod = "spearman", :</span>
+<span class="co">#&gt; Factor variables are omitted in plot</span>
+<span class="co">#&gt; Warning: Removed 160 rows containing non-finite values (stat_density).</span></code></pre></div>
 <div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-26-1.png" width="70%" style="display: block; margin: auto;"></div>
 <p>We can observe that our ocean proximity variable is indeed a good predictor for our different median house values. Another promising attribute to predict the median house value is the median income, so let’s zoom in:</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
@@ -801,7 +883,7 @@ Figure 4.4: California housing_df prices
 <footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
 
   <div class="col-12 col-md-6 mt-3">
-    <p>"<strong>Introduction to Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-09.</p>
+    <p>"<strong>Introduction to Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-10.</p>
   </div>
 
   <div class="col-12 col-md-6 mt-3">
