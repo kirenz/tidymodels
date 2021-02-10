@@ -1125,7 +1125,7 @@ model_comp %>%
 
 Now it's time to fit the best model (in our case the XGBoost model) one last time to the full *training set* and evaluate the resulting final model on the *test set*.
 
-# Last fit and evaluation on test set 
+## Last fit and evaluation on test set 
 
 Tidymodels provides the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html) which fits a model to the *training data* and evaluates it on the *test set*. We just need to provide the workflow object of the best model as well as the **data split** object (not the training data).
 
