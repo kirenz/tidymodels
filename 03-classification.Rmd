@@ -3,7 +3,7 @@
 # Introduction {#intro}
 
 
-```{r setup, include=FALSE}
+```{r include=FALSE}
 knitr::opts_chunk$set(cache = TRUE, 
                       warning = FALSE,
                       message = FALSE, 
@@ -396,7 +396,7 @@ Next, we take a closer look at the relationships between our variables. In parti
 
 Since our data includes information about `longitude` and `latitude`, we start our data exploration with the creation of a geographical scatterplot of the data to get some first insights: 
 
-```{r point-long-lat, fig.cap="Scatterplot of longitude and latitude", out.width='80%'}
+```{r point-long-lat-class, fig.cap="Scatterplot of longitude and latitude", out.width='80%'}
 
 data_explore %>% 
   ggplot(aes(x = longitude, y = latitude)) +
@@ -406,7 +406,7 @@ data_explore %>%
 
 A better visualization that highlights high-density areas (with parameter `alpha = 0.1` ):
 
-```{r point-long-lat-a, fig.cap="Scatterplot of longitude and latitude that highlights high-density areas", out.width='80%'}
+```{r point-long-lat-a-class, fig.cap="Scatterplot of longitude and latitude that highlights high-density areas", out.width='80%'}
 
 data_explore %>% 
   ggplot(aes(x = longitude, y = latitude)) +
