@@ -3,16 +3,8 @@
 # Introduction {#intro}
 
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(cache = TRUE, 
-                      warning = FALSE,
-                      message = FALSE, 
-                      echo = TRUE, 
-                      dpi = 300, 
-                      cache.lazy = TRUE,
-                      fig.width = 8, 
-                      fig.height = 5,
-                      eval=TRUE)
+```{r include=FALSE}
+
 library(tidyverse)
 library(skimr)
 library(GGally)
@@ -22,18 +14,6 @@ library(visdat)
 library(corrr)
 library(ggsignif)
 
-
-# The number of physical cores of your hardware:
-parallel::detectCores(logical = FALSE)
-# The number of possible independent processes that can 
-# be simultaneously used:  
-#parallel::detectCores(logical = TRUE)
-
-# Unix and macOS only
-library(doMC)
-registerDoMC(cores = 4)
-
-theme_set(theme_classic())
 ```
 
 In this chapter, we'll build the following models:
