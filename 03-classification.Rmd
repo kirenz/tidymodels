@@ -3,7 +3,7 @@
 # Introduction {#intro2}
 
 
-```{r include=FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache = TRUE, 
                       warning = FALSE,
                       message = FALSE, 
