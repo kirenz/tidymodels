@@ -4,7 +4,7 @@
 
 In our data science projects, we follow the process proposed in the "cross industry standard process for data mining (CRISP-DM)" from @Wirth2000:
 
-```{r crisp2, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Cross Industry Standard Process for Data Mining (@Wirth2000)"}
+```{r crisp2, fig.margin = TRUE, echo = FALSE, out.width = "50%", out.height = "50%", out fig.cap = "Cross Industry Standard Process for Data Mining (@Wirth2000)"}
 
 knitr::include_graphics("css/CRISP-DM.png")
 
