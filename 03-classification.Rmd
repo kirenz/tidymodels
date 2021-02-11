@@ -15,6 +15,9 @@ library(corrr)
 library(ggsignif)
 library(gt)
 
+theme_set(theme_classic())
+
+
 ```
 
 In this chapter, we'll build the following classification models:
@@ -82,13 +85,18 @@ housing_df <- read_csv(LINK)
 
 ## Clean data
 
-To get an first impression of the data we take a look at the top 4 rows of the DataFrame: 
+
+To get a first impression of the data we take a look at the top 4 rows: 
 
 ```{r}
+library(gt)
 
-head(housing_df, 4)
+housing_df %>% 
+  slice_head(n = 4) %>% 
+  gt() # print output using gt
 
 ```
+
 
 Notice the values in the first row of the variables `housing_median_age`and `median_house_value`. We need to remove the strings "years" and "$". Therefore, we use the function `str_remove_all` from the `stringr` package. Since there could be multiple wrong entries of the same type, we apply our corrections to all of the rows of the corresponding variable:
 

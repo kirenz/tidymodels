@@ -4,7 +4,6 @@
 
 
 ```{r include=FALSE}
-
 library(tidyverse)
 library(skimr)
 library(GGally)
@@ -13,6 +12,9 @@ library(tidymodels)
 library(visdat)
 library(corrr)
 library(ggsignif)
+library(gt)
+
+theme_set(theme_classic())
 
 ```
 
@@ -26,13 +28,10 @@ In this chapter, we'll build the following models:
 * K-nearest neighbor
 
 
-*Lasso* 
+*Lasso* performs a so called L1 regularization (a process of introducing additional information in order to prevent overfitting). In particular, it adds a penalty equivalent to the absolute value of the magnitude of coefficients. See @James2000 for more details about lasso regression.
 
-Lasso performs a so called L1 regularization (a process of introducing additional information in order to prevent overfitting). In particular, it adds a penalty equivalent to the absolute value of the magnitude of coefficients. See @James2000 for more details about lasso regression.
 
-*Natural spline*
-
-A natural spline is an advancement of a piecewise polynomial regression spline which involves fitting separate low-degree polynomials over different regions of our predictor space X. In particular, a natural spline is a regression spline with additional boundary constraints: the function is required to be linear at the boundary (in the region where X is smaller than the smallest knot, or larger than the largest knot). This additional constraint means that natural splines generally produce more stable estimates at the boundaries. See @James2000 for more details about piecewise polynomial regression splines and natural splines.
+A *natural spline* is an advancement of a piecewise polynomial regression spline which involves fitting separate low-degree polynomials over different regions of our predictor space X. In particular, a natural spline is a regression spline with additional boundary constraints: the function is required to be linear at the boundary (in the region where X is smaller than the smallest knot, or larger than the largest knot). This additional constraint means that natural splines generally produce more stable estimates at the boundaries. See @James2000 for more details about piecewise polynomial regression splines and natural splines.
 
 
 # Business understanding
@@ -62,7 +61,7 @@ knitr::include_graphics("css/data-pipeline.png")
 # Data understanding
 
 :::note
-In Data Understanding, you:
+In data understanding, you:
 
 - Import data 
 - Clean data
@@ -88,15 +87,18 @@ housing_df <- read_csv(LINK)
 
 ## Clean data
 
-To get an first impression of the data we take a look at the top 4 rows of the DataFrame: 
+To get a first impression of the data we take a look at the top 4 rows: 
 
 ```{r}
+library(gt)
 
-head(housing_df, 4)
+housing_df %>% 
+  slice_head(n = 4) %>% 
+  gt() # print output using gt
 
 ```
 
-Notice the values in the first row of the variables `housing_median_age`and `median_house_value`. We need to remove the strings "years" and "$". Therefore, we use the function `str_remove_all` from the `stringr` package. Since there could be multiple wrong entries of the same type, we apply our corrections to all of the rows of the corresponding variable:
+Notice the values in the first row of the variables `housing_median_age` and `median_house_value`. We need to remove the strings "years" and "$" with the function `str_remove_all` from the `stringr` package. Since there could be multiple wrong entries of the same type, we apply our corrections to all of the rows of the corresponding variable:
 
 ```{r}
 library(stringr)
@@ -110,7 +112,7 @@ housing_df <-
 
 ```
 
-We don't cover the phase of data cleaning in detail in this tutorial. However, in a real data science project, data cleaning is usually a very time consuming process.
+We don't cover the phase of data cleaning in detail in this tutorial. However, in a real data science project data cleaning is usually a very time consuming process.
 
 ## Format data
 
@@ -121,14 +123,13 @@ Next, we take a look at the data structure and check wether all data formats are
 * Categorical (nominal and ordinal) variables should usually be formatted as factors (`fct`) and not characters (`chr`). Especially, if they don't have many levels.
 
 ```{r}
-
 glimpse(housing_df)
 
 ```
 
 The package `visdat` helps us to explore the data class structure visually:
 
-```{r visdat-reg, fig.margin = TRUE, echo = TRUE, out.width = "100%", out.height = "100%", fig.cap = "Overview about Data classes"}
+```{r visdat-reg, fig.cap = "Overview about data classes"}
 library(visdat)
 
 vis_dat(housing_df)
@@ -140,7 +141,6 @@ We can observe that the numeric variables `housing_media_age` and `median_house_
 Furthermore, the categorical variable `ocean_proximity` is formatted as character instead of factor. Let's take a look at the levels of the variable: 
 
 ```{r}
-
 housing_df %>% 
   count(ocean_proximity,
         sort = TRUE)
@@ -152,7 +152,6 @@ The variable has only 5 levels and therefore should be formatted as a factor.
 Note that it is usually a good idea to first take care of the numerical variables. Afterwards, we can easily convert all remaining character variables to factors using the function `across` from the dplyr package (which is part of the tidyverse).
 
 ```{r}
-
 # convert to numeric
 housing_df <- 
   housing_df %>% 
@@ -173,8 +172,7 @@ housing_df <-
 
 Now let's turn our attention to missing data. Missing data can be viewed with the function `vis_miss` from the package `visdat`. We arrange the data by columns with most missingness: 
 
-```{r}
-
+```{r vis-miss-reg, fig.cap = "Overview about missing data"}
 vis_miss(housing_df, sort_miss = TRUE)
 
 ```
@@ -182,7 +180,6 @@ vis_miss(housing_df, sort_miss = TRUE)
 Here an alternative method to obtain missing data: 
 
 ```{r}
-
 is.na(housing_df) %>% colSums()
 
 ```
