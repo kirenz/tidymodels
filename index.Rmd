@@ -1,12 +1,12 @@
 --- 
 knit: "bookdown::render_book"
-title: "Introduction to Regression and Classification with Tidymodels"
+title: "Regression and Classification with Tidymodels"
 author: "Jan Kirenz"
 date: "`r Sys.Date()`"
 github-repo: kirenz/tidymodels
 site: bookdown::bookdown_site
 documentclass: book
-description: "This book contains materials to build regression and classification models using the tidymodels framework in the programming language R."
+description: "Tidymodels - learn how to build regression and classification models using the tidymodels framework including recipes and workflows."
 bibliography: [book.bib, packages.bib]
 biblio-style: apalike
 link-citations: yes
@@ -15,16 +15,16 @@ link-citations: yes
 
 # Welcome {.unnumbered}
 
-In this book we'll cover the  [`tidymodels`](https://www.tidymodels.org/) framework, which is a collection of packages for modeling and machine learning using [tidyverse](https://www.tidyverse.org/) principles to build regression and classification models. Furthermore, we follow the data science lifecycle process proposed by @Wirth2000:
+In this book we'll cover the  [`tidymodels`](https://www.tidymodels.org/) framework, which is a collection of R packages for modeling and machine learning using [tidyverse](https://www.tidyverse.org/) principles to build regression and classification models. Furthermore, we follow the data science lifecycle process proposed by @Wirth2000:
 
 
-```{r crisp1, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Cross Industry Standard Process for Data Mining (@Wirth2000)"}
+```{r crisp1, fig.margin = TRUE, echo = FALSE, out.width = "50%", out.height = "50%", fig.cap = "Cross Industry Standard Process for Data Mining (@Wirth2000)"}
 
 knitr::include_graphics("css/CRISP-DM.png")
 
 ```
 
-To learn more about this framework, review this [presentation about the CRISP-DM](https://docs.google.com/presentation/d/1Y_6d-yv0Wq9WQvWkYS64KYkcSoswewm-7t2jfSz3aT4/edit?usp=sharing). 
+To learn more about this data science lifecycle framework, review this [presentation about CRISP-DM](https://docs.google.com/presentation/d/1Y_6d-yv0Wq9WQvWkYS64KYkcSoswewm-7t2jfSz3aT4/edit?usp=sharing). 
 
 
 ## License {.unnumbered}
@@ -34,6 +34,6 @@ To learn more about this framework, review this [presentation about the CRISP-DM
 
 ## Acknowledements {.unnumbered}
 
-The content in this tutorials is mainly adapted from the excellent book “Hands-on machine learning with scikit-learn, keras and tensorflow” from @Geron2019.
+The content in this tutorials is mainly based on the excellent book “Hands-on machine learning with scikit-learn, keras and tensorflow” from @Geron2019.
 
 The website is built with [bookdown](https://bookdown.org/).
