@@ -86,151 +86,13 @@
 <h2>
 <span class="header-section-number">9.2</span> Clean data<a class="anchor" aria-label="anchor" href="#clean-data-1"><i class="fas fa-link"></i></a>
 </h2>
-<p>To get an first impression of the data we take a look at the top 4 rows of the DataFrame:</p>
+<p>To get a first impression of the data we take a look at the top 4 rows:</p>
 <div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">housing_df</span>, <span class="fl">4</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 4 x 10</span>
-<span class="co">#&gt;   longitude latitude housing_median_… total_rooms total_bedrooms population</span>
-<span class="co">#&gt;       &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;                  &lt;dbl&gt;          &lt;dbl&gt;      &lt;dbl&gt;</span>
-<span class="co">#&gt; 1     -122.     37.9 41.0years                880            129        322</span>
-<span class="co">#&gt; 2     -122.     37.9 21.0                    7099           1106       2401</span>
-<span class="co">#&gt; 3     -122.     37.8 52.0                    1467            190        496</span>
-<span class="co">#&gt; 4     -122.     37.8 52.0                    1274            235        558</span>
-<span class="co">#&gt; # … with 4 more variables: households &lt;dbl&gt;, median_income &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   median_house_value &lt;chr&gt;, ocean_proximity &lt;chr&gt;</span></code></pre></div>
-<p>Notice the values in the first row of the variables <code>housing_median_age</code>and <code>median_house_value</code>. We need to remove the strings “years” and “$.” Therefore, we use the function <code>str_remove_all</code> from the <code>stringr</code> package. Since there could be multiple wrong entries of the same type, we apply our corrections to all of the rows of the corresponding variable:</p>
-<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://stringr.tidyverse.org">stringr</a></span><span class="op">)</span>
-
-<span class="va">housing_df</span> <span class="op">&lt;-</span> 
-  <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
-  <span class="fu">mutate</span><span class="op">(</span>
-    housing_median_age <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_remove.html">str_remove_all</a></span><span class="op">(</span><span class="va">housing_median_age</span>, <span class="st">"[years]"</span><span class="op">)</span>,
-    median_house_value <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_remove.html">str_remove_all</a></span><span class="op">(</span><span class="va">median_house_value</span>, <span class="st">"[$]"</span><span class="op">)</span>
-  <span class="op">)</span></code></pre></div>
-<p>We don’t cover the phase of data cleaning in detail in this tutorial. However, in a real data science project, data cleaning is usually a very time consuming process.</p>
-</div>
-<div id="format-data-1" class="section level2" number="9.3">
-<h2>
-<span class="header-section-number">9.3</span> Format data<a class="anchor" aria-label="anchor" href="#format-data-1"><i class="fas fa-link"></i></a>
-</h2>
-<p>Next, we take a look at the data structure and check wether all data formats are correct:</p>
-<ul>
-<li><p>Numeric variables should be formatted as integers (<code>int</code>) or double precision floating point numbers (<code>dbl</code>).</p></li>
-<li><p>Categorical (nominal and ordinal) variables should usually be formatted as factors (<code>fct</code>) and not characters (<code>chr</code>). Especially, if they don’t have many levels.</p></li>
-</ul>
-<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="fu">glimpse</span><span class="op">(</span><span class="va">housing_df</span><span class="op">)</span>
-<span class="co">#&gt; Rows: 20,640</span>
-<span class="co">#&gt; Columns: 10</span>
-<span class="co">#&gt; $ longitude          &lt;dbl&gt; -122, -122, -122, -122, -122, -122, -122, -122, -1…</span>
-<span class="co">#&gt; $ latitude           &lt;dbl&gt; 37.9, 37.9, 37.9, 37.9, 37.9, 37.9, 37.8, 37.8, 37…</span>
-<span class="co">#&gt; $ housing_median_age &lt;chr&gt; "41.0", "21.0", "52.0", "52.0", "52.0", "52.0", "5…</span>
-<span class="co">#&gt; $ total_rooms        &lt;dbl&gt; 880, 7099, 1467, 1274, 1627, 919, 2535, 3104, 2555…</span>
-<span class="co">#&gt; $ total_bedrooms     &lt;dbl&gt; 129, 1106, 190, 235, 280, 213, 489, 687, 665, 707,…</span>
-<span class="co">#&gt; $ population         &lt;dbl&gt; 322, 2401, 496, 558, 565, 413, 1094, 1157, 1206, 1…</span>
-<span class="co">#&gt; $ households         &lt;dbl&gt; 126, 1138, 177, 219, 259, 193, 514, 647, 595, 714,…</span>
-<span class="co">#&gt; $ median_income      &lt;dbl&gt; 8.33, 8.30, 7.26, 5.64, 3.85, 4.04, 3.66, 3.12, 2.…</span>
-<span class="co">#&gt; $ median_house_value &lt;chr&gt; "452600.0", "358500.0", "352100.0", "341300.0", "3…</span>
-<span class="co">#&gt; $ ocean_proximity    &lt;chr&gt; "NEAR BAY", "NEAR BAY", "NEAR BAY", "NEAR BAY", "N…</span></code></pre></div>
-<p>The package <code>visdat</code> helps us to explore the data class structure visually:</p>
-<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://visdat.njtierney.com/">visdat</a></span><span class="op">)</span>
-
-<span class="fu"><a href="http://visdat.njtierney.com//reference/vis_dat.html">vis_dat</a></span><span class="op">(</span><span class="va">housing_df</span><span class="op">)</span></code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-66-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
-<p>We can observe that the numeric variables <code>housing_media_age</code> and <code>median_house_value</code> are declared as characters (<code>chr</code>) instead of numeric. We choose to format the variables as <code>dbl</code>, since the values could be floating-point numbers.</p>
-<p>Furthermore, the categorical variable <code>ocean_proximity</code> is formatted as character instead of factor. Let’s take a look at the levels of the variable:</p>
-<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">housing_df</span> <span class="op">%&gt;%</span> 
-  <span class="fu">count</span><span class="op">(</span><span class="va">ocean_proximity</span>,
-        sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 5 x 2</span>
-<span class="co">#&gt;   ocean_proximity     n</span>
-<span class="co">#&gt;   &lt;chr&gt;           &lt;int&gt;</span>
-<span class="co">#&gt; 1 &lt;1H OCEAN        9136</span>
-<span class="co">#&gt; 2 INLAND           6551</span>
-<span class="co">#&gt; 3 NEAR OCEAN       2658</span>
-<span class="co">#&gt; 4 NEAR BAY         2290</span>
-<span class="co">#&gt; 5 ISLAND              5</span></code></pre></div>
-<p>The variable has only 5 levels and therefore should be formatted as a factor.</p>
-<p>Note that it is usually a good idea to first take care of the numerical variables. Afterwards, we can easily convert all remaining character variables to factors using the function <code>across</code> from the dplyr package (which is part of the tidyverse).</p>
-<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="co"># convert to numeric</span>
-<span class="va">housing_df</span> <span class="op">&lt;-</span> 
-  <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
-  <span class="fu">mutate</span><span class="op">(</span>
-    housing_median_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">housing_median_age</span><span class="op">)</span>,
-    median_house_value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">median_house_value</span><span class="op">)</span>
-  <span class="op">)</span>
-
-<span class="co"># convert all remaining character variables to factors </span>
-<span class="va">housing_df</span> <span class="op">&lt;-</span> 
-  <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
-  <span class="fu">mutate</span><span class="op">(</span><span class="fu">across</span><span class="op">(</span><span class="fu">where</span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-</div>
-<div id="missing-data-1" class="section level2" number="9.4">
-<h2>
-<span class="header-section-number">9.4</span> Missing data<a class="anchor" aria-label="anchor" href="#missing-data-1"><i class="fas fa-link"></i></a>
-</h2>
-<p>Now let’s turn our attention to missing data. Missing data can be viewed with the function <code>vis_miss</code> from the package <code>visdat</code>. We arrange the data by columns with most missingness:</p>
-<div class="sourceCode" id="cb68"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="fu"><a href="http://visdat.njtierney.com//reference/vis_miss.html">vis_miss</a></span><span class="op">(</span><span class="va">housing_df</span>, sort_miss <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-69-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
-<p>Here an alternative method to obtain missing data:</p>
-<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span><span class="op">(</span><span class="va">housing_df</span><span class="op">)</span> <span class="op">%&gt;%</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html">colSums</a></span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt;          longitude           latitude housing_median_age        total_rooms </span>
-<span class="co">#&gt;                  0                  0                  0                  0 </span>
-<span class="co">#&gt;     total_bedrooms         population         households      median_income </span>
-<span class="co">#&gt;                207                  0                  0                  0 </span>
-<span class="co">#&gt; median_house_value    ocean_proximity </span>
-<span class="co">#&gt;                  0                  0</span></code></pre></div>
-<p>We have a missing rate of 0.1% (207 cases) in our variable <code>total_bedroms</code>. This can cause problems for some algorithms. We will take care of this issue during our data preparation phase.</p>
-</div>
-<div id="create-new-variables-1" class="section level2" number="9.5">
-<h2>
-<span class="header-section-number">9.5</span> Create new variables<a class="anchor" aria-label="anchor" href="#create-new-variables-1"><i class="fas fa-link"></i></a>
-</h2>
-<p>One very important thing you may want to do at the beginning of your data science project is to create new variable combinations. For example:</p>
-<ul>
-<li><p>the <em>total number of rooms</em> in a district is not very useful if you don’t know how many households there are. What you really want is the <em>number of rooms per household</em>.</p></li>
-<li><p>Similarly, the total number of bedrooms by itself is not very useful: you probably want to compare it to the number of rooms.</p></li>
-<li><p>And the <em>population per household</em> also seems like an interesting attribute combination to look at.</p></li>
-</ul>
-<p>Let’s create these new attributes:</p>
-<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">housing_df</span> <span class="op">&lt;-</span> 
-  <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
-  <span class="fu">mutate</span><span class="op">(</span>rooms_per_household <span class="op">=</span> <span class="va">total_rooms</span><span class="op">/</span><span class="va">households</span>,
-        bedrooms_per_room <span class="op">=</span> <span class="va">total_bedrooms</span><span class="op">/</span><span class="va">total_rooms</span>,
-        population_per_household <span class="op">=</span> <span class="va">population</span><span class="op">/</span><span class="va">households</span><span class="op">)</span></code></pre></div>
-<p>Furthermore, in our example we need to create our dependent variable and drop the original numeric variable:</p>
-<div class="sourceCode" id="cb71"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">housing_df</span> <span class="op">&lt;-</span> 
-  <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
-  <span class="fu">mutate</span><span class="op">(</span>price_category <span class="op">=</span> <span class="fu">case_when</span><span class="op">(</span> 
-    <span class="va">median_house_value</span> <span class="op">&lt;</span> <span class="fl">150000</span> <span class="op">~</span> <span class="st">"below"</span>,
-    <span class="va">median_house_value</span> <span class="op">&gt;=</span> <span class="fl">150000</span> <span class="op">~</span> <span class="st">"above"</span>,
-    <span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">mutate</span><span class="op">(</span>price_category <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html">as.factor</a></span><span class="op">(</span><span class="va">price_category</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">select</span><span class="op">(</span><span class="op">-</span><span class="va">median_house_value</span><span class="op">)</span></code></pre></div>
-<p>Take a look at our dependent variable and create a table with the package <a href="https://gt.rstudio.com/"><code>gt</code></a></p>
-<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/rstudio/gt">gt</a></span><span class="op">)</span>
 
 <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
-  <span class="fu">count</span><span class="op">(</span><span class="va">price_category</span>, <span class="co"># count observations</span>
-        name <span class="op">=</span><span class="st">"districts_total"</span><span class="op">)</span> <span class="op">%&gt;%</span>  <span class="co"># name the new variable </span>
-  <span class="fu">mutate</span><span class="op">(</span>percent <span class="op">=</span> <span class="va">districts_total</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="va">districts_total</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>  <span class="co"># calculate percentages</span>
-  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/gt.html">gt</a></span><span class="op">(</span><span class="op">)</span> <span class="co"># create table</span></code></pre></div>
+  <span class="fu">slice_head</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/gt.html">gt</a></span><span class="op">(</span><span class="op">)</span> <span class="co"># print output using gt</span></code></pre></div>
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
@@ -569,48 +431,200 @@
 </style>
 <div id="qfynujyosv" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><div class="inline-table"><table class="gt_table">
 <thead class="gt_col_headings"><tr>
-<th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">price_category</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">districts_total</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">percent</th>
+<th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">longitude</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">latitude</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">housing_median_age</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">total_rooms</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">total_bedrooms</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">population</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">households</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">median_income</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">median_house_value</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">ocean_proximity</th>
     </tr></thead>
 <tbody class="gt_table_body">
 <tr>
-<td class="gt_row gt_center">above</td>
-      <td class="gt_row gt_center">13084</td>
-      <td class="gt_row gt_right">0.634</td>
+<td class="gt_row gt_right">-122</td>
+      <td class="gt_row gt_right">38</td>
+      <td class="gt_row gt_left">41.0years</td>
+      <td class="gt_row gt_right">880</td>
+      <td class="gt_row gt_right">129</td>
+      <td class="gt_row gt_right">322</td>
+      <td class="gt_row gt_right">126</td>
+      <td class="gt_row gt_right">8.3</td>
+      <td class="gt_row gt_left">452600.0$</td>
+      <td class="gt_row gt_left">NEAR BAY</td>
     </tr>
 <tr>
-<td class="gt_row gt_center">below</td>
-      <td class="gt_row gt_center">7556</td>
-      <td class="gt_row gt_right">0.366</td>
+<td class="gt_row gt_right">-122</td>
+      <td class="gt_row gt_right">38</td>
+      <td class="gt_row gt_left">21.0</td>
+      <td class="gt_row gt_right">7099</td>
+      <td class="gt_row gt_right">1106</td>
+      <td class="gt_row gt_right">2401</td>
+      <td class="gt_row gt_right">1138</td>
+      <td class="gt_row gt_right">8.3</td>
+      <td class="gt_row gt_left">358500.0</td>
+      <td class="gt_row gt_left">NEAR BAY</td>
+    </tr>
+<tr>
+<td class="gt_row gt_right">-122</td>
+      <td class="gt_row gt_right">38</td>
+      <td class="gt_row gt_left">52.0</td>
+      <td class="gt_row gt_right">1467</td>
+      <td class="gt_row gt_right">190</td>
+      <td class="gt_row gt_right">496</td>
+      <td class="gt_row gt_right">177</td>
+      <td class="gt_row gt_right">7.3</td>
+      <td class="gt_row gt_left">352100.0</td>
+      <td class="gt_row gt_left">NEAR BAY</td>
+    </tr>
+<tr>
+<td class="gt_row gt_right">-122</td>
+      <td class="gt_row gt_right">38</td>
+      <td class="gt_row gt_left">52.0</td>
+      <td class="gt_row gt_right">1274</td>
+      <td class="gt_row gt_right">235</td>
+      <td class="gt_row gt_right">558</td>
+      <td class="gt_row gt_right">219</td>
+      <td class="gt_row gt_right">5.6</td>
+      <td class="gt_row gt_left">341300.0</td>
+      <td class="gt_row gt_left">NEAR BAY</td>
     </tr>
 </tbody>
 </table></div></div>
-<p>Let’s make a nice looking table:</p>
-<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
+<p>Notice the values in the first row of the variables <code>housing_median_age</code>and <code>median_house_value</code>. We need to remove the strings “years” and “$.” Therefore, we use the function <code>str_remove_all</code> from the <code>stringr</code> package. Since there could be multiple wrong entries of the same type, we apply our corrections to all of the rows of the corresponding variable:</p>
+<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://stringr.tidyverse.org">stringr</a></span><span class="op">)</span>
+
+<span class="va">housing_df</span> <span class="op">&lt;-</span> 
+  <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
+  <span class="fu">mutate</span><span class="op">(</span>
+    housing_median_age <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_remove.html">str_remove_all</a></span><span class="op">(</span><span class="va">housing_median_age</span>, <span class="st">"[years]"</span><span class="op">)</span>,
+    median_house_value <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_remove.html">str_remove_all</a></span><span class="op">(</span><span class="va">median_house_value</span>, <span class="st">"[$]"</span><span class="op">)</span>
+  <span class="op">)</span></code></pre></div>
+<p>We don’t cover the phase of data cleaning in detail in this tutorial. However, in a real data science project, data cleaning is usually a very time consuming process.</p>
+</div>
+<div id="format-data-1" class="section level2" number="9.3">
+<h2>
+<span class="header-section-number">9.3</span> Format data<a class="anchor" aria-label="anchor" href="#format-data-1"><i class="fas fa-link"></i></a>
+</h2>
+<p>Next, we take a look at the data structure and check wether all data formats are correct:</p>
+<ul>
+<li><p>Numeric variables should be formatted as integers (<code>int</code>) or double precision floating point numbers (<code>dbl</code>).</p></li>
+<li><p>Categorical (nominal and ordinal) variables should usually be formatted as factors (<code>fct</code>) and not characters (<code>chr</code>). Especially, if they don’t have many levels.</p></li>
+</ul>
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="fu">glimpse</span><span class="op">(</span><span class="va">housing_df</span><span class="op">)</span>
+<span class="co">#&gt; Rows: 20,640</span>
+<span class="co">#&gt; Columns: 10</span>
+<span class="co">#&gt; $ longitude          &lt;dbl&gt; -122, -122, -122, -122, -122, -122, -122, -122, -1…</span>
+<span class="co">#&gt; $ latitude           &lt;dbl&gt; 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38…</span>
+<span class="co">#&gt; $ housing_median_age &lt;chr&gt; "41.0", "21.0", "52.0", "52.0", "52.0", "52.0", "5…</span>
+<span class="co">#&gt; $ total_rooms        &lt;dbl&gt; 880, 7099, 1467, 1274, 1627, 919, 2535, 3104, 2555…</span>
+<span class="co">#&gt; $ total_bedrooms     &lt;dbl&gt; 129, 1106, 190, 235, 280, 213, 489, 687, 665, 707,…</span>
+<span class="co">#&gt; $ population         &lt;dbl&gt; 322, 2401, 496, 558, 565, 413, 1094, 1157, 1206, 1…</span>
+<span class="co">#&gt; $ households         &lt;dbl&gt; 126, 1138, 177, 219, 259, 193, 514, 647, 595, 714,…</span>
+<span class="co">#&gt; $ median_income      &lt;dbl&gt; 8.3, 8.3, 7.3, 5.6, 3.8, 4.0, 3.7, 3.1, 2.1, 3.7, …</span>
+<span class="co">#&gt; $ median_house_value &lt;chr&gt; "452600.0", "358500.0", "352100.0", "341300.0", "3…</span>
+<span class="co">#&gt; $ ocean_proximity    &lt;chr&gt; "NEAR BAY", "NEAR BAY", "NEAR BAY", "NEAR BAY", "N…</span></code></pre></div>
+<p>The package <code>visdat</code> helps us to explore the data class structure visually:</p>
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://visdat.njtierney.com/">visdat</a></span><span class="op">)</span>
+
+<span class="fu"><a href="http://visdat.njtierney.com//reference/vis_dat.html">vis_dat</a></span><span class="op">(</span><span class="va">housing_df</span><span class="op">)</span></code></pre></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-65-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<p>We can observe that the numeric variables <code>housing_media_age</code> and <code>median_house_value</code> are declared as characters (<code>chr</code>) instead of numeric. We choose to format the variables as <code>dbl</code>, since the values could be floating-point numbers.</p>
+<p>Furthermore, the categorical variable <code>ocean_proximity</code> is formatted as character instead of factor. Let’s take a look at the levels of the variable:</p>
+<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
 <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
-  <span class="fu">count</span><span class="op">(</span><span class="va">price_category</span>, 
-        name <span class="op">=</span><span class="st">"districts_total"</span><span class="op">)</span> <span class="op">%&gt;%</span>
-  <span class="fu">mutate</span><span class="op">(</span>percent <span class="op">=</span> <span class="va">districts_total</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="va">districts_total</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>
- <span class="fu"><a href="https://rdrr.io/pkg/gt/man/gt.html">gt</a></span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
-  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/tab_header.html">tab_header</a></span><span class="op">(</span>
-    title <span class="op">=</span> <span class="st">"California median house prices"</span>,
-    subtitle <span class="op">=</span> <span class="st">"Districts above and below 150.000$"</span>
-  <span class="op">)</span> <span class="op">%&gt;%</span>
-  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/cols_label.html">cols_label</a></span><span class="op">(</span>
-    price_category <span class="op">=</span> <span class="st">"Price"</span>,
-    districts_total <span class="op">=</span> <span class="st">"Districts"</span>,
-    percent <span class="op">=</span> <span class="st">"Percent"</span>
-  <span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/fmt_number.html">fmt_number</a></span><span class="op">(</span>
-    columns <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/vars.html">vars</a></span><span class="op">(</span><span class="va">districts_total</span><span class="op">)</span>,
-    suffixing <span class="op">=</span> <span class="cn">TRUE</span>
-  <span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/fmt_percent.html">fmt_percent</a></span><span class="op">(</span>
-    columns <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/vars.html">vars</a></span><span class="op">(</span><span class="va">percent</span><span class="op">)</span>,
-    decimal <span class="op">=</span> <span class="fl">2</span>
-  <span class="op">)</span></code></pre></div>
+  <span class="fu">count</span><span class="op">(</span><span class="va">ocean_proximity</span>,
+        sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="co">#&gt; # A tibble: 5 x 2</span>
+<span class="co">#&gt;   ocean_proximity     n</span>
+<span class="co">#&gt;   &lt;chr&gt;           &lt;int&gt;</span>
+<span class="co">#&gt; 1 &lt;1H OCEAN        9136</span>
+<span class="co">#&gt; 2 INLAND           6551</span>
+<span class="co">#&gt; 3 NEAR OCEAN       2658</span>
+<span class="co">#&gt; 4 NEAR BAY         2290</span>
+<span class="co">#&gt; 5 ISLAND              5</span></code></pre></div>
+<p>The variable has only 5 levels and therefore should be formatted as a factor.</p>
+<p>Note that it is usually a good idea to first take care of the numerical variables. Afterwards, we can easily convert all remaining character variables to factors using the function <code>across</code> from the dplyr package (which is part of the tidyverse).</p>
+<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="co"># convert to numeric</span>
+<span class="va">housing_df</span> <span class="op">&lt;-</span> 
+  <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
+  <span class="fu">mutate</span><span class="op">(</span>
+    housing_median_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">housing_median_age</span><span class="op">)</span>,
+    median_house_value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">median_house_value</span><span class="op">)</span>
+  <span class="op">)</span>
+
+<span class="co"># convert all remaining character variables to factors </span>
+<span class="va">housing_df</span> <span class="op">&lt;-</span> 
+  <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
+  <span class="fu">mutate</span><span class="op">(</span><span class="fu">across</span><span class="op">(</span><span class="fu">where</span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+</div>
+<div id="missing-data-1" class="section level2" number="9.4">
+<h2>
+<span class="header-section-number">9.4</span> Missing data<a class="anchor" aria-label="anchor" href="#missing-data-1"><i class="fas fa-link"></i></a>
+</h2>
+<p>Now let’s turn our attention to missing data. Missing data can be viewed with the function <code>vis_miss</code> from the package <code>visdat</code>. We arrange the data by columns with most missingness:</p>
+<div class="sourceCode" id="cb68"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="fu"><a href="http://visdat.njtierney.com//reference/vis_miss.html">vis_miss</a></span><span class="op">(</span><span class="va">housing_df</span>, sort_miss <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-68-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<p>Here an alternative method to obtain missing data:</p>
+<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span><span class="op">(</span><span class="va">housing_df</span><span class="op">)</span> <span class="op">%&gt;%</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html">colSums</a></span><span class="op">(</span><span class="op">)</span>
+<span class="co">#&gt;          longitude           latitude housing_median_age        total_rooms </span>
+<span class="co">#&gt;                  0                  0                  0                  0 </span>
+<span class="co">#&gt;     total_bedrooms         population         households      median_income </span>
+<span class="co">#&gt;                207                  0                  0                  0 </span>
+<span class="co">#&gt; median_house_value    ocean_proximity </span>
+<span class="co">#&gt;                  0                  0</span></code></pre></div>
+<p>We have a missing rate of 0.1% (207 cases) in our variable <code>total_bedroms</code>. This can cause problems for some algorithms. We will take care of this issue during our data preparation phase.</p>
+</div>
+<div id="create-new-variables-1" class="section level2" number="9.5">
+<h2>
+<span class="header-section-number">9.5</span> Create new variables<a class="anchor" aria-label="anchor" href="#create-new-variables-1"><i class="fas fa-link"></i></a>
+</h2>
+<p>One very important thing you may want to do at the beginning of your data science project is to create new variable combinations. For example:</p>
+<ul>
+<li><p>the <em>total number of rooms</em> in a district is not very useful if you don’t know how many households there are. What you really want is the <em>number of rooms per household</em>.</p></li>
+<li><p>Similarly, the total number of bedrooms by itself is not very useful: you probably want to compare it to the number of rooms.</p></li>
+<li><p>And the <em>population per household</em> also seems like an interesting attribute combination to look at.</p></li>
+</ul>
+<p>Let’s create these new attributes:</p>
+<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">housing_df</span> <span class="op">&lt;-</span> 
+  <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
+  <span class="fu">mutate</span><span class="op">(</span>rooms_per_household <span class="op">=</span> <span class="va">total_rooms</span><span class="op">/</span><span class="va">households</span>,
+        bedrooms_per_room <span class="op">=</span> <span class="va">total_bedrooms</span><span class="op">/</span><span class="va">total_rooms</span>,
+        population_per_household <span class="op">=</span> <span class="va">population</span><span class="op">/</span><span class="va">households</span><span class="op">)</span></code></pre></div>
+<p>Furthermore, in our example we need to create our dependent variable and drop the original numeric variable:</p>
+<div class="sourceCode" id="cb71"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">housing_df</span> <span class="op">&lt;-</span> 
+  <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
+  <span class="fu">mutate</span><span class="op">(</span>price_category <span class="op">=</span> <span class="fu">case_when</span><span class="op">(</span> 
+    <span class="va">median_house_value</span> <span class="op">&lt;</span> <span class="fl">150000</span> <span class="op">~</span> <span class="st">"below"</span>,
+    <span class="va">median_house_value</span> <span class="op">&gt;=</span> <span class="fl">150000</span> <span class="op">~</span> <span class="st">"above"</span>,
+    <span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">mutate</span><span class="op">(</span>price_category <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html">as.factor</a></span><span class="op">(</span><span class="va">price_category</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">select</span><span class="op">(</span><span class="op">-</span><span class="va">median_house_value</span><span class="op">)</span></code></pre></div>
+<p>Take a look at our dependent variable and create a table with the package <a href="https://gt.rstudio.com/"><code>gt</code></a></p>
+<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/rstudio/gt">gt</a></span><span class="op">)</span>
+
+<span class="va">housing_df</span> <span class="op">%&gt;%</span> 
+  <span class="fu">count</span><span class="op">(</span><span class="va">price_category</span>, <span class="co"># count observations</span>
+        name <span class="op">=</span><span class="st">"districts_total"</span><span class="op">)</span> <span class="op">%&gt;%</span>  <span class="co"># name the new variable </span>
+  <span class="fu">mutate</span><span class="op">(</span>percent <span class="op">=</span> <span class="va">districts_total</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="va">districts_total</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>  <span class="co"># calculate percentages</span>
+  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/gt.html">gt</a></span><span class="op">(</span><span class="op">)</span> <span class="co"># create table</span></code></pre></div>
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
@@ -948,6 +962,386 @@
 }
 </style>
 <div id="amucjibsfg" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><div class="inline-table"><table class="gt_table">
+<thead class="gt_col_headings"><tr>
+<th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">price_category</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">districts_total</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">percent</th>
+    </tr></thead>
+<tbody class="gt_table_body">
+<tr>
+<td class="gt_row gt_center">above</td>
+      <td class="gt_row gt_center">13084</td>
+      <td class="gt_row gt_right">0.63</td>
+    </tr>
+<tr>
+<td class="gt_row gt_center">below</td>
+      <td class="gt_row gt_center">7556</td>
+      <td class="gt_row gt_right">0.37</td>
+    </tr>
+</tbody>
+</table></div></div>
+<p>Let’s make a nice looking table:</p>
+<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">housing_df</span> <span class="op">%&gt;%</span> 
+  <span class="fu">count</span><span class="op">(</span><span class="va">price_category</span>, 
+        name <span class="op">=</span><span class="st">"districts_total"</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu">mutate</span><span class="op">(</span>percent <span class="op">=</span> <span class="va">districts_total</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="va">districts_total</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>
+ <span class="fu"><a href="https://rdrr.io/pkg/gt/man/gt.html">gt</a></span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/tab_header.html">tab_header</a></span><span class="op">(</span>
+    title <span class="op">=</span> <span class="st">"California median house prices"</span>,
+    subtitle <span class="op">=</span> <span class="st">"Districts above and below 150.000$"</span>
+  <span class="op">)</span> <span class="op">%&gt;%</span>
+  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/cols_label.html">cols_label</a></span><span class="op">(</span>
+    price_category <span class="op">=</span> <span class="st">"Price"</span>,
+    districts_total <span class="op">=</span> <span class="st">"Districts"</span>,
+    percent <span class="op">=</span> <span class="st">"Percent"</span>
+  <span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/fmt_number.html">fmt_number</a></span><span class="op">(</span>
+    columns <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/vars.html">vars</a></span><span class="op">(</span><span class="va">districts_total</span><span class="op">)</span>,
+    suffixing <span class="op">=</span> <span class="cn">TRUE</span>
+  <span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="https://rdrr.io/pkg/gt/man/fmt_percent.html">fmt_percent</a></span><span class="op">(</span>
+    columns <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/vars.html">vars</a></span><span class="op">(</span><span class="va">percent</span><span class="op">)</span>,
+    decimal <span class="op">=</span> <span class="fl">2</span>
+  <span class="op">)</span></code></pre></div>
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#fcmdvxjzej .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#fcmdvxjzej .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#fcmdvxjzej .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#fcmdvxjzej .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#fcmdvxjzej .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#fcmdvxjzej .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#fcmdvxjzej .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#fcmdvxjzej .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#fcmdvxjzej .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#fcmdvxjzej .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#fcmdvxjzej .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#fcmdvxjzej .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#fcmdvxjzej .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#fcmdvxjzej .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#fcmdvxjzej .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#fcmdvxjzej .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#fcmdvxjzej .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#fcmdvxjzej .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#fcmdvxjzej .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#fcmdvxjzej .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#fcmdvxjzej .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#fcmdvxjzej .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#fcmdvxjzej .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#fcmdvxjzej .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#fcmdvxjzej .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#fcmdvxjzej .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#fcmdvxjzej .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#fcmdvxjzej .gt_left {
+  text-align: left;
+}
+
+#fcmdvxjzej .gt_center {
+  text-align: center;
+}
+
+#fcmdvxjzej .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#fcmdvxjzej .gt_font_normal {
+  font-weight: normal;
+}
+
+#fcmdvxjzej .gt_font_bold {
+  font-weight: bold;
+}
+
+#fcmdvxjzej .gt_font_italic {
+  font-style: italic;
+}
+
+#fcmdvxjzej .gt_super {
+  font-size: 65%;
+}
+
+#fcmdvxjzej .gt_footnote_marks {
+  font-style: italic;
+  font-size: 65%;
+}
+</style>
+<div id="fcmdvxjzej" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><div class="inline-table"><table class="gt_table">
 <thead class="gt_header">
 <tr>
 <th colspan="3" class="gt_heading gt_title gt_font_normal" style>California median house prices</th>
@@ -985,7 +1379,7 @@
 <span class="fu">skim</span><span class="op">(</span><span class="va">housing_df</span><span class="op">)</span></code></pre></div>
 <div class="inline-table"><table class="table table-sm">
 <caption>
-<span id="tab:unnamed-chunk-75">Table 9.1: </span>Data summary</caption>
+<span id="tab:unnamed-chunk-74">Table 9.1: </span>Data summary</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Name</td>
@@ -1078,7 +1472,7 @@
 <td align="right">2.00</td>
 <td align="right">-124.35</td>
 <td align="right">-121.80</td>
-<td align="right">-118.49</td>
+<td align="right">-118.5</td>
 <td align="right">-118.01</td>
 <td align="right">-114</td>
 <td align="left">▂▆▃▇▁</td>
@@ -1091,7 +1485,7 @@
 <td align="right">2.14</td>
 <td align="right">32.54</td>
 <td align="right">33.93</td>
-<td align="right">34.26</td>
+<td align="right">34.3</td>
 <td align="right">37.71</td>
 <td align="right">42</td>
 <td align="left">▇▁▅▂▁</td>
@@ -1104,7 +1498,7 @@
 <td align="right">12.59</td>
 <td align="right">1.00</td>
 <td align="right">18.00</td>
-<td align="right">29.00</td>
+<td align="right">29.0</td>
 <td align="right">37.00</td>
 <td align="right">52</td>
 <td align="left">▃▇▇▇▅</td>
@@ -1117,7 +1511,7 @@
 <td align="right">2181.62</td>
 <td align="right">2.00</td>
 <td align="right">1447.75</td>
-<td align="right">2127.00</td>
+<td align="right">2127.0</td>
 <td align="right">3148.00</td>
 <td align="right">39320</td>
 <td align="left">▇▁▁▁▁</td>
@@ -1130,7 +1524,7 @@
 <td align="right">421.39</td>
 <td align="right">1.00</td>
 <td align="right">296.00</td>
-<td align="right">435.00</td>
+<td align="right">435.0</td>
 <td align="right">647.00</td>
 <td align="right">6445</td>
 <td align="left">▇▁▁▁▁</td>
@@ -1143,7 +1537,7 @@
 <td align="right">1132.46</td>
 <td align="right">3.00</td>
 <td align="right">787.00</td>
-<td align="right">1166.00</td>
+<td align="right">1166.0</td>
 <td align="right">1725.00</td>
 <td align="right">35682</td>
 <td align="left">▇▁▁▁▁</td>
@@ -1156,7 +1550,7 @@
 <td align="right">382.33</td>
 <td align="right">1.00</td>
 <td align="right">280.00</td>
-<td align="right">409.00</td>
+<td align="right">409.0</td>
 <td align="right">605.00</td>
 <td align="right">6082</td>
 <td align="left">▇▁▁▁▁</td>
@@ -1169,7 +1563,7 @@
 <td align="right">1.90</td>
 <td align="right">0.50</td>
 <td align="right">2.56</td>
-<td align="right">3.53</td>
+<td align="right">3.5</td>
 <td align="right">4.74</td>
 <td align="right">15</td>
 <td align="left">▇▇▁▁▁</td>
@@ -1182,7 +1576,7 @@
 <td align="right">2.47</td>
 <td align="right">0.85</td>
 <td align="right">4.44</td>
-<td align="right">5.23</td>
+<td align="right">5.2</td>
 <td align="right">6.05</td>
 <td align="right">142</td>
 <td align="left">▇▁▁▁▁</td>
@@ -1195,7 +1589,7 @@
 <td align="right">0.06</td>
 <td align="right">0.10</td>
 <td align="right">0.18</td>
-<td align="right">0.20</td>
+<td align="right">0.2</td>
 <td align="right">0.24</td>
 <td align="right">1</td>
 <td align="left">▇▁▁▁▁</td>
@@ -1208,7 +1602,7 @@
 <td align="right">10.39</td>
 <td align="right">0.69</td>
 <td align="right">2.43</td>
-<td align="right">2.82</td>
+<td align="right">2.8</td>
 <td align="right">3.28</td>
 <td align="right">1243</td>
 <td align="left">▇▁▁▁▁</td>
@@ -1231,7 +1625,7 @@
     <span class="va">median_income</span>, <span class="va">bedrooms_per_room</span>, <span class="va">rooms_per_household</span>, 
     <span class="va">population_per_household</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu"><a href="https://ggobi.github.io/ggally/reference/ggscatmat.html">ggscatmat</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-76-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-75-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
 <p>Another option is to use <code>ggpairs</code>, where we even can integrate categorical variables like our dependent variable <code>price_category</code> and ocean proximity in the output:</p>
 <div class="sourceCode" id="cb76"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://ggobi.github.io/ggally/">GGally</a></span><span class="op">)</span>
@@ -1243,7 +1637,7 @@
     <span class="va">population_per_household</span>, <span class="va">ocean_proximity</span>,
     <span class="va">price_category</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu"><a href="https://ggobi.github.io/ggally/reference/ggpairs.html">ggpairs</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-77-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-76-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
 <p>There are a few things you might notice in these histograms:</p>
 <ul>
 <li><p>The variables <em>median income</em>, <em>housing median age</em> were capped.</p></li>
@@ -1360,7 +1754,7 @@ Figure 9.4: California housing_df prices
        size <span class="op">=</span> <span class="va">population</span>,
        alpha <span class="op">=</span> <span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">scale_alpha</span><span class="op">(</span>guide <span class="op">=</span> <span class="st">'none'</span><span class="op">)</span> <span class="co"># don't show legend for alpha</span></code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-80-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-79-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
 <p>This image tells you that the housing prices are very much related to the location (e.g., close to the ocean) and to the population density. Hence our <code>ocean_proximity</code> variable may be a useful predictor of our categorical price variable median housing prices, although in Northern California the housing prices in coastal districts are not too high, so it is not a simple rule.</p>
 </div>
 <div id="numerical-variables" class="section level3" number="9.8.3">
@@ -1375,7 +1769,7 @@ Figure 9.4: California housing_df prices
              fill <span class="op">=</span> <span class="va">price_category</span>, color <span class="op">=</span> <span class="va">price_category</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">geom_boxplot</span><span class="op">(</span>alpha<span class="op">=</span><span class="fl">0.4</span><span class="op">)</span> 
   </code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-81-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-80-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
 <p>Let`s define a function for this task that accepts strings as inputs so we don’t have to copy and paste our code for every plot. Note that we only have to change the “y-variable” in every plot.</p>
 <div class="sourceCode" id="cb85"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
@@ -1420,7 +1814,7 @@ Figure 9.4: California housing_df prices
 <span class="co">#&gt; [[8]]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[9]]</span></code></pre></div>
-<p><img src="Tidymodels_files/figure-html/unnamed-chunk-84-1.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-84-2.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-84-3.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-84-4.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-84-5.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-84-6.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-84-7.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-84-8.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-84-9.png" width="100%" height="100%" style="display: block; margin: auto;"></p>
+<p><img src="Tidymodels_files/figure-html/unnamed-chunk-83-1.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-83-2.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-83-3.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-83-4.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-83-5.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-83-6.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-83-7.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-83-8.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-83-9.png" width="100%" height="100%" style="display: block; margin: auto;"></p>
 <p>We can observe a difference in the price_category:</p>
 <ul>
 <li><p>The differences between our two groups are quite small for <code>housing_median_age</code>, <code>total_room</code>, <code>total_bedrooms</code>, <code>population</code> and <code>households</code></p></li>
@@ -1450,7 +1844,7 @@ Figure 9.4: California housing_df prices
 <span class="co">#&gt; [[1]]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; [[2]]</span></code></pre></div>
-<p><img src="Tidymodels_files/figure-html/unnamed-chunk-85-1.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-85-2.png" width="100%" height="100%" style="display: block; margin: auto;"></p>
+<p><img src="Tidymodels_files/figure-html/unnamed-chunk-84-1.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-84-2.png" width="100%" height="100%" style="display: block; margin: auto;"></p>
 <p>Now we are able to recognize a small difference for <code>population_per_household</code>. <code>rooms_per_household</code> on the other hand is quite similar for both groups.</p>
 <p>Additionally, we can use the function <code>ggscatmat</code> to create plots with our dependent variable as color column:</p>
 <div class="sourceCode" id="cb89"><pre class="downlit sourceCode r">
@@ -1463,7 +1857,7 @@ Figure 9.4: California housing_df prices
   <span class="fu"><a href="https://ggobi.github.io/ggally/reference/ggscatmat.html">ggscatmat</a></span><span class="op">(</span>color<span class="op">=</span><span class="st">"price_category"</span>, 
             corMethod <span class="op">=</span> <span class="st">"spearman"</span>,
             alpha<span class="op">=</span><span class="fl">0.2</span><span class="op">)</span></code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-86-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-85-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
 <p>There are a few things you might notice in these histograms:</p>
 <ul>
 <li><p>Note that our attributes have very different scales. We will take care of this issue later in data preparation, when we use feature scaling (data normalization).</p></li>
@@ -1919,7 +2313,7 @@ Figure 9.4: California housing_df prices
   <span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">ocean_proximity</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">geom_bin2d</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">scale_fill_continuous</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"viridis"</span><span class="op">)</span> </code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-88-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-87-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
 <p>We can observe that most districts with a median house price above 150,000 have an ocean proximity below 1 hour. On the other hand, districts below that threshold are typically inland. Hence, ocean proximity is indeed a good predictor for our two different median house value categories.</p>
 </div>
 </div>

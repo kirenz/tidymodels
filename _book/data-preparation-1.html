@@ -103,13 +103,13 @@
 <span class="co">#&gt; Rows: 19,648</span>
 <span class="co">#&gt; Columns: 8</span>
 <span class="co">#&gt; $ longitude                &lt;dbl&gt; -122, -122, -122, -122, -122, -122, -122, -1…</span>
-<span class="co">#&gt; $ latitude                 &lt;dbl&gt; 37.9, 37.9, 37.9, 37.9, 37.9, 37.9, 37.8, 37…</span>
+<span class="co">#&gt; $ latitude                 &lt;dbl&gt; 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, …</span>
 <span class="co">#&gt; $ median_house_value       &lt;dbl&gt; 452600, 358500, 352100, 341300, 342200, 2697…</span>
-<span class="co">#&gt; $ median_income            &lt;dbl&gt; 8.33, 8.30, 7.26, 5.64, 3.85, 4.04, 3.66, 3.…</span>
+<span class="co">#&gt; $ median_income            &lt;dbl&gt; 8.3, 8.3, 7.3, 5.6, 3.8, 4.0, 3.7, 3.1, 2.1,…</span>
 <span class="co">#&gt; $ ocean_proximity          &lt;fct&gt; NEAR BAY, NEAR BAY, NEAR BAY, NEAR BAY, NEAR…</span>
-<span class="co">#&gt; $ bedrooms_per_room        &lt;dbl&gt; 0.147, 0.156, 0.130, 0.184, 0.172, 0.232, 0.…</span>
-<span class="co">#&gt; $ rooms_per_household      &lt;dbl&gt; 6.98, 6.24, 8.29, 5.82, 6.28, 4.76, 4.93, 4.…</span>
-<span class="co">#&gt; $ population_per_household &lt;dbl&gt; 2.56, 2.11, 2.80, 2.55, 2.18, 2.14, 2.13, 1.…</span></code></pre></div>
+<span class="co">#&gt; $ bedrooms_per_room        &lt;dbl&gt; 0.15, 0.16, 0.13, 0.18, 0.17, 0.23, 0.19, 0.…</span>
+<span class="co">#&gt; $ rooms_per_household      &lt;dbl&gt; 7.0, 6.2, 8.3, 5.8, 6.3, 4.8, 4.9, 4.8, 4.3,…</span>
+<span class="co">#&gt; $ population_per_household &lt;dbl&gt; 2.6, 2.1, 2.8, 2.5, 2.2, 2.1, 2.1, 1.8, 2.0,…</span></code></pre></div>
 <p>Furthermore, we need to make a new data split since we updated the original data.</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span>
@@ -153,7 +153,7 @@
     <span class="va">bedrooms_per_room</span>, <span class="va">rooms_per_household</span>, 
     <span class="va">population_per_household</span>
     <span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">step_naomit</span><span class="op">(</span><span class="fu">everything</span><span class="op">(</span><span class="op">)</span>, skip <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">step_naomit</span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html">everything</a></span><span class="op">(</span><span class="op">)</span>, skip <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu">step_novel</span><span class="op">(</span><span class="fu">all_nominal</span><span class="op">(</span><span class="op">)</span>, <span class="op">-</span><span class="fu">all_outcomes</span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>
   <span class="fu">step_normalize</span><span class="op">(</span><span class="fu"><a href="http://visdat.njtierney.com//reference/all_numeric.html">all_numeric</a></span><span class="op">(</span><span class="op">)</span>, <span class="op">-</span><span class="fu">all_outcomes</span><span class="op">(</span><span class="op">)</span>, 
                  <span class="op">-</span><span class="va">longitude</span>, <span class="op">-</span><span class="va">latitude</span><span class="op">)</span> <span class="op">%&gt;%</span> 
@@ -188,11 +188,11 @@
 <span class="co">#&gt; Rows: 14,582</span>
 <span class="co">#&gt; Columns: 10</span>
 <span class="co">#&gt; $ longitude                  &lt;dbl&gt; -122, -122, -122, -122, -122, -122, -122, …</span>
-<span class="co">#&gt; $ latitude                   &lt;dbl&gt; 37.9, 37.9, 37.9, 37.9, 37.9, 37.8, 37.8, …</span>
-<span class="co">#&gt; $ median_income              &lt;dbl&gt; 2.0488, 1.7451, 1.1765, 0.3102, 0.4195, 0.…</span>
-<span class="co">#&gt; $ rooms_per_household        &lt;dbl&gt; 0.7212, 1.7805, 0.4608, 0.7472, -0.2857, -…</span>
-<span class="co">#&gt; $ population_per_household   &lt;dbl&gt; -1.1528, -0.0806, -0.4400, -1.0267, -1.099…</span>
-<span class="co">#&gt; $ median_house_value         &lt;dbl&gt; 12.8, 12.8, 12.7, 12.7, 12.5, 12.6, 12.4, …</span>
+<span class="co">#&gt; $ latitude                   &lt;dbl&gt; 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38…</span>
+<span class="co">#&gt; $ median_income              &lt;dbl&gt; 2.049, 1.745, 1.176, 0.310, 0.419, 0.197, …</span>
+<span class="co">#&gt; $ rooms_per_household        &lt;dbl&gt; 0.721, 1.780, 0.461, 0.747, -0.286, -0.155…</span>
+<span class="co">#&gt; $ population_per_household   &lt;dbl&gt; -1.153, -0.081, -0.440, -1.027, -1.099, -1…</span>
+<span class="co">#&gt; $ median_house_value         &lt;dbl&gt; 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12…</span>
 <span class="co">#&gt; $ ocean_proximity_INLAND     &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …</span>
 <span class="co">#&gt; $ ocean_proximity_ISLAND     &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …</span>
 <span class="co">#&gt; $ ocean_proximity_NEAR.BAY   &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …</span>
@@ -206,7 +206,7 @@
          <span class="va">population_per_household</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu"><a href="https://ggobi.github.io/ggally/reference/ggscatmat.html">ggscatmat</a></span><span class="op">(</span>corMethod <span class="op">=</span> <span class="st">"spearman"</span>,
             alpha<span class="op">=</span><span class="fl">0.2</span><span class="op">)</span></code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-34-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-33-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
 <p>You should notice that:</p>
 <ul>
 <li><p>the variables <code>longitude</code> and <code>latitude</code> did not change.</p></li>

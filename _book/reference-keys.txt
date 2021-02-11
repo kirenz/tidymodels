@@ -2,13 +2,14 @@ fig:crisp1
 fig:crisp2
 fig:datapipeline
 fig:visdat-reg
-tab:unnamed-chunk-14
+fig:vis-miss-reg
+tab:unnamed-chunk-13
 fig:hist-med-value
 fig:point-long-lat
 fig:point-long-lat-a
 fig:plot-ca-prices
 fig:datapipeline-class
-tab:unnamed-chunk-75
+tab:unnamed-chunk-74
 fig:hist-med-value-class
 fig:point-long-lat-class
 fig:point-long-lat-a-class
