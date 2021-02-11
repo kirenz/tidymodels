@@ -15,7 +15,14 @@ link-citations: yes
 
 # Welcome {.unnumbered}
 
-In this book we'll cover the  [`tidymodels`](https://www.tidymodels.org/) framework, which is a collection of R packages for modeling and machine learning using [tidyverse](https://www.tidyverse.org/) principles to build regression and classification models. Furthermore, we follow the data science lifecycle process proposed by @Wirth2000:
+In this book we'll cover supervised models by using the  [`tidymodels`](https://www.tidymodels.org/) framework, which is a collection of R packages for modeling and machine learning using [tidyverse](https://www.tidyverse.org/) principles. 
+
+Within supervised models, there are two main sub-categories:
+
+* Regression predicts a numeric outcome.
+* Classification predicts an outcome that is an ordered or unordered set of qualitative values.
+
+Furthermore, we follow the data science lifecycle process proposed by @Wirth2000:
 
 
 ```{r crisp1, fig.margin = TRUE, echo = FALSE, out.width = "50%", out.height = "50%", fig.cap = "Cross Industry Standard Process for Data Mining (@Wirth2000)"}
