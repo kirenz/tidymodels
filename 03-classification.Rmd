@@ -4,7 +4,6 @@
 
 
 ```{r include=FALSE}
-
 library(tidyverse)
 library(skimr)
 library(GGally)
@@ -16,8 +15,6 @@ library(ggsignif)
 library(gt)
 
 theme_set(theme_classic())
-
-
 ```
 
 In this chapter, we'll build the following classification models:
@@ -50,9 +47,7 @@ Note that in our classification example we again use the dataset from the previo
 Let's assume that the model’s output will be fed to another analytics system, along with other data. This downstream system will determine whether it is worth investing in a given area or not. The **data processing components** (also called data pipeline) are shown in \@ref(fig:datapipeline-class) (you can use [Google's architectural templates](https://docs.google.com/presentation/d/1vjm5YdmOH5LrubFhHf1vlqW2O9Z2UqdWA8biN3e8K5U/edit#slide=id.g19b41f69d7_2_265) to draw the data pipeline).
 
 ```{r datapipeline-class, fig.margin = TRUE, echo = FALSE, fig.width = 3, fig.cap = "Data processing components"}
-
 knitr::include_graphics("css/data-pipeline.png")
-
 ```
 
 
@@ -79,7 +74,6 @@ library(tidyverse)
 
 LINK <- "https://raw.githubusercontent.com/kirenz/datasets/master/housing_unclean.csv"
 housing_df <- read_csv(LINK)
-
 ```
 
 
@@ -94,7 +88,6 @@ library(gt)
 housing_df %>% 
   slice_head(n = 4) %>% 
   gt() # print output using gt
-
 ```
 
 
@@ -109,7 +102,6 @@ housing_df <-
     housing_median_age = str_remove_all(housing_median_age, "[years]"),
     median_house_value = str_remove_all(median_house_value, "[$]")
   )
-
 ```
 
 We don't cover the phase of data cleaning in detail in this tutorial. However, in a real data science project, data cleaning is usually a very time consuming process.
@@ -123,9 +115,7 @@ Next, we take a look at the data structure and check wether all data formats are
 * Categorical (nominal and ordinal) variables should usually be formatted as factors (`fct`) and not characters (`chr`). Especially, if they don't have many levels.
 
 ```{r}
-
 glimpse(housing_df)
-
 ```
 
 The package `visdat` helps us to explore the data class structure visually:
@@ -134,7 +124,6 @@ The package `visdat` helps us to explore the data class structure visually:
 library(visdat)
 
 vis_dat(housing_df)
-
 ```
 
 We can observe that the numeric variables `housing_media_age` and `median_house_value` are declared as characters (`chr`) instead of numeric. We choose to format the variables as `dbl`, since the values could be floating-point numbers. 
@@ -142,11 +131,9 @@ We can observe that the numeric variables `housing_media_age` and `median_house_
 Furthermore, the categorical variable `ocean_proximity` is formatted as character instead of factor. Let's take a look at the levels of the variable: 
 
 ```{r}
-
 housing_df %>% 
   count(ocean_proximity,
         sort = TRUE)
-
 ```
 
 The variable has only 5 levels and therefore should be formatted as a factor.
@@ -154,7 +141,6 @@ The variable has only 5 levels and therefore should be formatted as a factor.
 Note that it is usually a good idea to first take care of the numerical variables. Afterwards, we can easily convert all remaining character variables to factors using the function `across` from the dplyr package (which is part of the tidyverse).
 
 ```{r}
-
 # convert to numeric
 housing_df <- 
   housing_df %>% 
@@ -167,7 +153,6 @@ housing_df <-
 housing_df <- 
   housing_df %>% 
   mutate(across(where(is.character), as.factor))
-
 ```
 
 
@@ -176,17 +161,13 @@ housing_df <-
 Now let's turn our attention to missing data. Missing data can be viewed with the function `vis_miss` from the package `visdat`. We arrange the data by columns with most missingness: 
 
 ```{r}
-
 vis_miss(housing_df, sort_miss = TRUE)
-
 ```
 
 Here an alternative method to obtain missing data: 
 
 ```{r}
-
 is.na(housing_df) %>% colSums()
-
 ```
 
 We have a missing rate of 0.1% (207 cases) in our variable `total_bedroms`. This can cause problems for some algorithms. We will take care of this issue during our data preparation phase. 
@@ -205,13 +186,11 @@ One very important thing you may want to do at the beginning of your data scienc
 Let’s create these new attributes:
 
 ```{r}
-
 housing_df <- 
   housing_df %>% 
   mutate(rooms_per_household = total_rooms/households,
         bedrooms_per_room = total_bedrooms/total_rooms,
         population_per_household = population/households)
-
 ```
 
 Furthermore, in our example we need to create our dependent variable and drop the original numeric variable:
@@ -237,13 +216,11 @@ housing_df %>%
         name ="districts_total") %>%  # name the new variable 
   mutate(percent = districts_total/sum(districts_total)) %>%  # calculate percentages
   gt() # create table
-  
 ```
 
 Let's make a nice looking table:
 
 ```{r}
-
 housing_df %>% 
   count(price_category, 
         name ="districts_total") %>%
@@ -264,9 +241,8 @@ housing_df %>%
   ) %>% 
   fmt_percent(
     columns = vars(percent),
-    decimal = 2
-  )
-
+    decimals = 2
+  ) 
 ```
 
 
@@ -275,9 +251,7 @@ housing_df %>%
 After we took care of our data problems, we can obtain a data summary of all numerical and categorical attributes using a function from the package `skimr`:
 
 ```{r}
-
 skim(housing_df)
-
 ```
 
 We have `r nrow(housing_df)` observations and `r ncol(housing_df)` columns in our data.
@@ -301,7 +275,6 @@ housing_df %>%
     median_income, bedrooms_per_room, rooms_per_household, 
     population_per_household) %>% 
   ggscatmat(alpha = 0.2)
-
 ```
 
 Another option is to use `ggpairs`, where we even can integrate categorical variables like our dependent variable `price_category` and ocean proximity in the output:
@@ -316,7 +289,6 @@ housing_df %>%
     population_per_household, ocean_proximity,
     price_category) %>% 
   ggpairs()
-
 ```
 
 There are a few things you might notice in these histograms:
@@ -342,7 +314,6 @@ In our data split, we want to ensure that the training and test set is represent
 housing_df %>% 
   ggplot(aes(price_category)) +
   geom_bar() 
-
 ```
 
 In general, we would like to have instances for each *stratum*, or else the estimate of a stratum's importance may be biased. A *stratum* (plural strata) refers to a subset (part) of the whole data from which is being sampled. We only have two categories in our data. 
@@ -350,7 +321,6 @@ In general, we would like to have instances for each *stratum*, or else the esti
 To actually split the data, we can use the `rsample` package (included in `tidymodels`) to create an object that contains the information on how to split the data (which we call `data_split`), and then two more `rsample` functions to create data frames for the training and testing sets:
 
 ```{r}
-
 # Fix the random numbers by setting the seed 
 # This enables the analysis to be reproducible 
 set.seed(123)
@@ -363,7 +333,6 @@ data_split <- initial_split(housing_df,
 # Create dataframes for the two sets:
 train_data <- training(data_split) 
 test_data <- testing(data_split)
-
 ```
 
 
@@ -377,9 +346,7 @@ The point of data exploration is to gain insights that will help you select impo
 We first make a copy of the training data since we don't want to alter our data during data exploration. 
 
 ```{r}
-
 data_explore <- train_data
-
 ```
 
 Next, we take a closer look at the relationships between our variables. In particular, we are interested in the relationships between our *dependent* variable `price_category` and all other variables. The goal is to identify possible *predictor variables* which we could use in our models to predict the `price_category`. 
@@ -390,21 +357,17 @@ Next, we take a closer look at the relationships between our variables. In parti
 Since our data includes information about `longitude` and `latitude`, we start our data exploration with the creation of a geographical scatterplot of the data to get some first insights: 
 
 ```{r point-long-lat-class, fig.cap="Scatterplot of longitude and latitude", out.width='80%'}
-
 data_explore %>% 
   ggplot(aes(x = longitude, y = latitude)) +
   geom_point(color = "cornflowerblue")
-
 ```
 
 A better visualization that highlights high-density areas (with parameter `alpha = 0.1` ):
 
 ```{r point-long-lat-a-class, fig.cap="Scatterplot of longitude and latitude that highlights high-density areas", out.width='80%'}
-
 data_explore %>% 
   ggplot(aes(x = longitude, y = latitude)) +
   geom_point(color = "cornflowerblue", alpha = 0.1) 
-  
 ```
 
 Overview about California housing prices: 
@@ -415,12 +378,10 @@ Overview about California housing prices:
 
 
 ```{r plot-ca-prices-class, fig.cap="California housing_df prices", out.width='80%'}
-
 data_explore %>% 
   ggplot(aes(x = longitude, y = latitude)) +
   geom_point(aes(size = population, color = price_category), 
              alpha = 0.4)
-
 ```
 
 Lastly, we add a map to our data:
@@ -436,7 +397,6 @@ qmplot(x = longitude,
        size = population,
        alpha = 0.4) +
   scale_alpha(guide = 'none') # don't show legend for alpha
-
 ```
 
 This image tells you that the housing prices are very much related to the location (e.g., close to the ocean) and to the population density. Hence our `ocean_proximity` variable may be a useful predictor of our categorical price variable median housing prices, although in Northern California the housing prices in coastal districts are not too high, so it is not a simple rule.
@@ -447,18 +407,15 @@ We can use boxplots to check, if we actually find differences in our numeric var
 
 
 ```{r}
-
 data_explore %>% 
   ggplot(aes(x = price_category, y = median_income, 
              fill = price_category, color = price_category)) +
   geom_boxplot(alpha=0.4) 
-  
 ```
 
 Let`s define a function for this task that accepts strings as inputs so we don't have to copy and paste our code for every plot. Note that we only have to change the "y-variable" in every  plot.
 
 ```{r}
-
 print_boxplot <- function(.y_var){
   
   # convert strings to variable
@@ -471,13 +428,11 @@ print_boxplot <- function(.y_var){
   geom_boxplot(alpha=0.4) 
   
 }  
-
 ```
 
 Obtain all of the names of the y-variables we want to use for our plots:
 
 ```{r}
-
 y_var <- 
   data_explore %>% 
   select(where(is.numeric), -longitude, - latitude) %>% 
@@ -491,7 +446,6 @@ The map function applys the function `print_boxplot` to each element of our atom
 library(purrr)
 
 map(y_var, print_boxplot)
-
 ```
 
 
@@ -525,8 +479,6 @@ y_var_out <-
   variable.names() 
 
 map(y_var_out, print_boxplot_out)
-
-
 ```
 
 
@@ -536,7 +488,6 @@ Now we are able to recognize a small difference for `population_per_household`. 
 Additionally, we can use the function `ggscatmat` to create plots with our dependent variable as color column:
 
 ```{r }
-
 library(GGally)
 
 data_explore %>% 
@@ -545,7 +496,6 @@ data_explore %>%
   ggscatmat(color="price_category", 
             corMethod = "spearman",
             alpha=0.2)
-
 ```
 
 
@@ -592,10 +542,8 @@ data_explore %>%
   ) %>% 
   fmt_percent(
     columns = vars(percent),
-    decimal = 2
+    decimals = 2
   ) 
-  
-
 ```
 
 The function `geom_bin2d()` creats a heatmap by counting the number of cases in each group, and then mapping the number of cases to each subgroub's fill.  
@@ -641,7 +589,6 @@ We will want to use our recipe across several steps as we train and test our mod
 Before we create our `recipes`, we first select the variables which we will use in the model.  Note that we keep `longitude` and `latitude` to be able to map the data in a later stage but we will not use the variables in our model. 
 
 ```{r}
-
 housing_df_new <-
   housing_df %>% 
   select( # select our predictors
@@ -655,8 +602,6 @@ housing_df_new <-
          )
 
 glimpse(housing_df_new)
-
-
 ```
 
 Furthermore, we need to make a new data split since we updated the original data. 
@@ -670,7 +615,6 @@ data_split <- initial_split(housing_df_new, # updated data
 
 train_data <- training(data_split) 
 test_data <- testing(data_split)
-
 ```
 
 ## Data prepropecessing recipe 
@@ -703,7 +647,6 @@ Let’s create a base `recipe` for all of our classification models. Note that t
 
 
 ```{r}
-
 housing_rec <-
   recipe(price_category ~ .,
          data = train_data) %>%
@@ -721,35 +664,28 @@ housing_rec <-
   step_dummy(all_nominal(), -all_outcomes()) %>%
   step_zv(all_numeric(), -all_outcomes()) %>%
   step_corr(all_predictors(), threshold = 0.7, method = "spearman") 
-
 ```
 
 
 To view the current set of variables and roles, use the `summary()` function:
 
 ```{r}
-
 summary(housing_rec)
-
 ```
 
 If we would like to check if all of our preprocessing steps from above actually worked, we can  proceed as follows:
 
 ```{r}
-
 prepped_data <- 
   housing_rec %>% # use the recipe object
   prep() %>% # perform the recipe on training data
   juice() # extract only the preprocessed dataframe 
-
 ```
 
 Take a look at the data structure:
 
 ```{r}
-
 glimpse(prepped_data)
-
 ```
 
 
@@ -783,14 +719,12 @@ Therefore, it is usually a good idea to create a so called `validation set`. Wat
 We use k-fold crossvalidation to build a set of 5 validation folds with the function `vfold_cv`. We also use stratified sampling:
 
 ```{r}
-
 set.seed(100)
 
 cv_folds <-
  vfold_cv(train_data, 
           v = 5, # number of folds
           strata = price_category) 
-
 ```
 
 We will come back to the *validation set* after we specified our models. 
@@ -810,7 +744,6 @@ You can choose the `model type` and `engine` from this [list](https://www.tidymo
 ### Logistic regression 
 
 ```{r}
-
 log_spec <- # your model specification
   logistic_reg() %>%  # model type
   set_engine(engine = "glm") %>%  # model engine
@@ -818,7 +751,6 @@ log_spec <- # your model specification
 
 # Show your model specification
 log_spec
-
 ```
 
 
@@ -831,7 +763,6 @@ rf_spec <-
   rand_forest() %>% 
   set_engine("ranger") %>% 
   set_mode("classification")
-
 ```
 
 ### Boosted tree (XGBoost)
@@ -843,18 +774,15 @@ xgb_spec <-
   boost_tree() %>% 
   set_engine("xgboost") %>% 
   set_mode("classification") 
-
 ```
 
 ### K-nearest neighbor   
 
 ```{r}
-
 knn_spec <- 
   nearest_neighbor(neighbors = 4) %>% # we can adjust the number of neighbors 
   set_engine("kknn") %>% 
   set_mode("classification") 
-
 ```
 
 
@@ -867,7 +795,6 @@ To combine the data preparation recipe with the model building, we use the packa
 Bundle recipe and model with `workflows`:
 
 ```{r}
-
 log_wflow <- # new workflow object
  workflow() %>% # use workflow function
  add_recipe(housing_rec) %>%   # use the new recipe
@@ -886,12 +813,10 @@ Bundle recipe and model:
 
 
 ```{r}
-
 rf_wflow <-
  workflow() %>%
  add_recipe(housing_rec) %>% 
  add_model(rf_spec) 
-
 ```
 
 
@@ -901,12 +826,10 @@ Bundle recipe and model:
 
 
 ```{r}
-
 xgb_wflow <-
  workflow() %>%
  add_recipe(housing_rec) %>% 
  add_model(xgb_spec)
-
 ```
 
 ### K-nearest neighbor
@@ -914,12 +837,10 @@ xgb_wflow <-
 Bundle recipe and model:
 
 ```{r}
-
 knn_wflow <-
  workflow() %>%
  add_recipe(housing_rec) %>% 
  add_model(knn_spec)
-
 ```
 
 ## Evaluate models
@@ -934,15 +855,13 @@ Finally, we collect the performance metrics with `collect_metrics()` and pick th
 
 
 ```{r}
-
 set.seed(100)
 
 log_res <- 
   log_wflow %>% # use workflow object
   fit_resamples(resamples = cv_folds,
-                control = control_resamples(save_pred = TRUE) # save predictions
-    )
-
+                control = control_resamples(save_pred = TRUE)) 
+                 # save predictions
 ```
 
 #### Accuracy and AUC
@@ -950,17 +869,13 @@ log_res <-
 Show average performance over all folds:
 
 ```{r}
-
 log_res %>%  collect_metrics(summarize = TRUE)
-
 ```
 
 Show performance for every single fold:
 
 ```{r}
-
 log_res %>%  collect_metrics(summarize = FALSE)
-
 ```
 
 
@@ -970,11 +885,9 @@ To obtain the actual model predictions, we use the function `collect_predictions
 
 
 ```{r}
-
 log_pred <- 
   log_res %>%
   collect_predictions()
-
 ```
 
 
@@ -983,10 +896,8 @@ log_pred <-
 Now we can use the predictions to create a *confusion matrix*:
 
 ```{r}
-
 log_pred %>%
   conf_mat(price_category, .pred_class)
-
 ```
 
 
@@ -995,7 +906,6 @@ log_pred %>%
 Obtain recall, precision and F1-Score:
 
 ```{r}
-
 # recall
 log_res %>%
   collect_predictions() %>%
@@ -1010,7 +920,6 @@ log_res %>%
 log_res %>%
   collect_predictions() %>%
   f_meas(price_category, .pred_class)
-
 ```
 
 
@@ -1033,7 +942,6 @@ log_res %>%
 We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
 
 ```{r}
-
 rf_res <-
   rf_wflow %>% 
   fit_resamples(
@@ -1042,7 +950,6 @@ rf_res <-
     )
 
 rf_res %>%  collect_metrics(summarize = TRUE)
-
 ```
 
 ### XGBoost
@@ -1050,7 +957,6 @@ rf_res %>%  collect_metrics(summarize = TRUE)
 We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
 
 ```{r}
-
 xgb_res <- 
   xgb_wflow %>% 
   fit_resamples(
@@ -1059,7 +965,6 @@ xgb_res <-
     ) 
 
 xgb_res %>% collect_metrics(summarize = TRUE)
-
 ```
 
 
@@ -1068,7 +973,6 @@ xgb_res %>% collect_metrics(summarize = TRUE)
 We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
 
 ```{r}
-
 knn_res <- 
   knn_wflow %>% 
   fit_resamples(
@@ -1077,7 +981,6 @@ knn_res <-
     ) 
 
 knn_res %>% collect_metrics(summarize = TRUE)
-
 ```
 
 ### Compare models
@@ -1085,8 +988,6 @@ knn_res %>% collect_metrics(summarize = TRUE)
 Extract the RMSE from our models to compare them:
 
 ```{r}
-
-
 log_metrics <- 
   log_res %>% 
   collect_metrics(summarise = TRUE) %>%
@@ -1134,16 +1035,13 @@ model_comp %>%
   ggplot(aes(model, mean_roc_auc, fill=model)) +
   geom_col() +
   scale_fill_brewer(palette = "Blues")
-  
 ```
 
 Note that the model results are all quite similar. 
 
 ```{r}
-
 # find maximum accuracy
-model_comp %>% 
-  slice_max(mean_accuracy)
+model_comp %>% slice_max(mean_accuracy)
 ```
 
 Now it's time to fit the best model (in our case the XGBoost model) one last time to the full *training set* and evaluate the resulting final model on the *test set*.
@@ -1153,13 +1051,11 @@ Now it's time to fit the best model (in our case the XGBoost model) one last tim
 Tidymodels provides the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html) which fits a model to the *training data* and evaluates it on the *test set*. We just need to provide the workflow object of the best model as well as the **data split** object (not the training data).
 
 ```{r}
-
 last_fit_xgb <- last_fit(xgb_wflow, split = data_split)
 
 # Show performance metrics
 last_fit_xgb %>% 
   collect_metrics()
-
 ```
 
 And this is our final result. Remember that if a model fit to the training dataset also fits the test dataset well, minimal *overfitting* has taken place. This seems to be also the case in our example.
