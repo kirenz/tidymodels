@@ -38,19 +38,21 @@ theme_set(theme_classic())
 
 In this chapter, we'll build the following models:
 
+
 * lasso, 
 * natural spline, 
 * random forest,
 * XGBoost (extreme gradient boosted trees)
 * K-nearest neighbor
 
+
 *Lasso* 
 
-Lasso performs a so called L1 regularization (a process of introducing additional information in order to prevent overfitting), i.e. adds penalty equivalent to absolute value of the magnitude of coefficients. See James2000 for more details about lasso regression.
+Lasso performs a so called L1 regularization (a process of introducing additional information in order to prevent overfitting). In particular, it adds a penalty equivalent to the absolute value of the magnitude of coefficients. See @James2000 for more details about lasso regression.
 
 *Natural spline*
 
-A natural spline is an advancement of a piecewise polynomial regression spline which involves fitting separate low-degree polynomials over different regions of our predictor space X. In particular, a natural spline is a regression spline with additional boundary constraints: the function is required to be linear at the boundary (in the region where X is smaller than the smallest knot, or larger than the largest knot). This additional constraint means that natural splines generally produce more stable estimates at the boundaries. See James2000 for more details about piecewise polynomial regression splines and natural splines.
+A natural spline is an advancement of a piecewise polynomial regression spline which involves fitting separate low-degree polynomials over different regions of our predictor space X. In particular, a natural spline is a regression spline with additional boundary constraints: the function is required to be linear at the boundary (in the region where X is smaller than the smallest knot, or larger than the largest knot). This additional constraint means that natural splines generally produce more stable estimates at the boundaries. See @James2000 for more details about piecewise polynomial regression splines and natural splines.
 
 
 # Business understanding
@@ -146,7 +148,7 @@ glimpse(housing_df)
 
 The package `visdat` helps us to explore the data class structure visually:
 
-```{r}
+```{r visdat-reg, fig.margin = TRUE, echo = TRUE, out.width = "100%", out.height = "100%", fig.cap = "Overview about Data classes"}
 library(visdat)
 
 vis_dat(housing_df)
