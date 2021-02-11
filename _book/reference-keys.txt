@@ -85,11 +85,13 @@ logistic-regression
 random-forest-3
 boosted-tree-xgboost-1
 k-nearest-neighbor-3
+neural-network
 create-workflows-1
 logistic-regression-1
 random-forest-4
 xgboost-2
 k-nearest-neighbor-4
+neural-network-1
 evaluate-models-1
 logistic-regression-2
 accuracy-and-auc
@@ -100,5 +102,6 @@ probability-distributions
 random-forest-5
 xgboost-3
 k-nearest-neighbor-5
+neural-network-2
 compare-models-1
 last-fit-and-evaluation-on-test-set-1

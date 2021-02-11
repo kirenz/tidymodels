@@ -38,3 +38,5 @@ Matrix
 glmnet
 kknn
 gt
+keras
+magrittr
