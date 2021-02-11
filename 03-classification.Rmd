@@ -23,6 +23,7 @@ In this chapter, we'll build the following classification models:
 * random forest,
 * XGBoost (extreme gradient boosted trees),
 * K-nearest neighbor
+* Neural network
 
 We use the same data and follow the same procedure as in our regression example.
 
@@ -306,7 +307,7 @@ Before we get started with our in-depth data exploration, let’s split our sing
 
 A **training dataset** is a dataset of examples used during the learning process and is used to fit the models. A **test dataset** is a dataset that is independent of the training dataset and is used to evaluate the performance of the final model. If a model fit to the training dataset also fits the test dataset well, minimal *overfitting* has taken place. A better fitting of the training dataset as opposed to the test dataset usually points to overfitting.
 
-In our data split, we want to ensure that the training and test set is representative of the  categories of our dependent variable. Take a look at \@ref(fig:hist-med-value-class)
+In our data split, we want to ensure that the training and test set is representative of the categories of our dependent variable. Take a look at \@ref(fig:hist-med-value-class)
 
 
 ```{r hist-med-value-class, fig.cap="Histogram of Median Proces", out.width='80%'}
@@ -786,6 +787,22 @@ knn_spec <-
 ```
 
 
+### Neural network
+
+To use the neural network model, you will need to install the following packages: `keras`. You will also need the python keras library installed (see `?keras::install_keras()`).
+
+```{r}
+library(keras)
+
+nnet_spec <-
+  mlp() %>%
+  set_mode("classification") %>% 
+  set_engine("keras", verbose = 0) 
+```
+
+We set the engine-specific `verbose` argument to prevent logging the results.
+
+
 ## Create workflows
 
 To combine the data preparation recipe with the model building, we use the package [workflows](https://workflows.tidymodels.org). A workflow is an object that can bundle together your pre-processing recipe, modeling, and even post-processing requests (like calculating the RMSE). 
@@ -806,11 +823,9 @@ log_wflow
 ```
 
 
-
 ### Random forest
 
 Bundle recipe and model:
-
 
 ```{r}
 rf_wflow <-
@@ -823,7 +838,6 @@ rf_wflow <-
 ### XGBoost
 
 Bundle recipe and model:
-
 
 ```{r}
 xgb_wflow <-
@@ -842,6 +856,18 @@ knn_wflow <-
  add_recipe(housing_rec) %>% 
  add_model(knn_spec)
 ```
+
+### Neural network
+
+Bundle recipe and model:
+
+```{r}
+nnet_wflow <-
+ workflow() %>%
+ add_recipe(housing_rec) %>% 
+ add_model(nnet_spec)
+```
+
 
 ## Evaluate models
 
@@ -983,6 +1009,22 @@ knn_res <-
 knn_res %>% collect_metrics(summarize = TRUE)
 ```
 
+### Neural network
+
+We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
+
+```{r}
+nnet_res <- 
+  nnet_wflow %>% 
+  fit_resamples(
+    resamples = cv_folds,
+    control = control_resamples(save_pred = TRUE)
+    ) 
+
+nnet_res %>% collect_metrics(summarize = TRUE)
+```
+
+
 ### Compare models
 
 Extract the RMSE from our models to compare them:
@@ -1008,11 +1050,17 @@ knn_metrics <-
   collect_metrics(summarise = TRUE) %>%
   mutate(model = "Knn")
 
+nnet_metrics <- 
+  nnet_res %>% 
+  collect_metrics(summarise = TRUE) %>%
+  mutate(model = "Neural net")
+
 # create dataframe with all models
 model_compare <- bind_rows(log_metrics,
                            rf_metrics,
                            xgb_metrics,
-                           knn_metrics) 
+                           knn_metrics,
+                           nnet_metrics) 
 
 # change data structure
 model_comp <- 
@@ -1044,7 +1092,7 @@ Note that the model results are all quite similar.
 model_comp %>% slice_max(mean_accuracy)
 ```
 
-Now it's time to fit the best model (in our case the XGBoost model) one last time to the full *training set* and evaluate the resulting final model on the *test set*.
+Now it's time to fit the best model one last time to the full *training set* and evaluate the resulting final model on the *test set*.
 
 ## Last fit and evaluation on test set 
 
