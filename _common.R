@@ -8,7 +8,7 @@ options(
 
 knitr::opts_chunk$set(
   comment = "#>",
-  collapse = TRUE,
+  collapse = FALSE,
   dpi = 300,
   cache = TRUE,
   warning = FALSE,
