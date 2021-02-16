@@ -1026,21 +1026,22 @@ log_pred %>%
 
 #### ROC-Curve
 
-We can also make an ROC curve for every fold  (see [Google Developers](https://developers.google.com/machine-learning/crash-course/classification/roc-and-auc) for more details).
+We can also make an ROC curve for our 5 folds. Since the category we are predicting is the first level in the `price_category` factor (“above”), we provide `roc_curve()` with the relevant class probability `.pred_above`:
 
 ```{r}
 
 log_pred %>%
-  group_by(id) %>%
+  group_by(id) %>% # id contains our folds
   roc_curve(price_category, .pred_above) %>% 
   autoplot()
 
 ```
 
+Visit [Google developer's Machine Learning Crashcourse](https://developers.google.com/machine-learning/crash-course/classification/roc-and-auc) to learn more about the ROC-Curve. 
 
 #### Probability distributions
 
-Plot predicted probability distributions for out two classes.
+Plot predicted probability distributions for our two classes.
 
 ```{r}
 log_res %>%
@@ -1211,9 +1212,9 @@ model_comp %>% slice_max(mean_f_meas)
 
 Now it's time to fit the best model one last time to the full *training set* and evaluate the resulting final model on the *test set*.
 
-## Last fit and evaluation on test set 
+## Last evaluation on test set 
 
-Tidymodels provides the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html) which fits a model to the *training data* and evaluates it on the *test set*. We just need to provide the workflow object of the best model as well as the **data split** object (not the training data).
+Tidymodels provides the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html) which fits a model to the whole *training data* and evaluates it on the *test set*. We just need to provide the workflow object of the best model as well as the **data split** object (not the training data).
 
 ```{r}
 last_fit_rf <- last_fit(rf_wflow, 
@@ -1223,16 +1224,18 @@ last_fit_rf <- last_fit(rf_wflow,
                           accuracy, kap,
                           roc_auc, sens, spec)
                         )
+```
 
-# Show performance metrics
+Show performance metrics
+
+```{r}
 last_fit_rf %>% 
   collect_metrics()
 ```
 
-And this is our final model result. Remember that if a model fit to the training dataset also fits the test dataset well, minimal *overfitting* has taken place. This seems to be also the case in our example. 
+And these are our final performance metrics. Remember that if a model fit to the training dataset also fits the test dataset well, minimal *overfitting* has taken place. This seems to be also the case in our example. 
 
 To learn more about the model we can access the variable importance scores via the `.workflow` column. We first need to pluck out the first element in the workflow column, then pull out the fit from the workflow object. Finally, the `vip` package helps us visualize the variable importance scores for the top features. Note that we can't create this type of plot for every model engine.
-
 
 ```{r}
 library(vip)
@@ -1245,38 +1248,23 @@ last_fit_rf %>%
 
 The two most important predictors in whether a district has a median house value above or below 150000 dollars were the ocean proximity inland and the median income.  
 
+Take a look at the confusion matrix:
 
 ```{r}
 last_fit_rf %>%
-  conf_mat(price_category, .pred_class) 
-```
-
-Additionally, the confusion matrix can quickly be visualized in different formats using `autoplot()`. Type mosaic:
-
-
-```{r}
-log_pred %>%
-  conf_mat(price_category, .pred_class) %>% 
-  autoplot(type = "mosaic")
-```
-
-Or type heatmap:
-
-```{r}
-log_pred %>%
+  collect_predictions() %>% 
   conf_mat(price_category, .pred_class) %>% 
   autoplot(type = "heatmap")
 ```
 
-Let’s generate our last ROC curve to visualize. Since the event we are predicting is the first level in the children factor (“children”), we provide roc_curve() with the relevant class probability .pred_children:
 
+Let’s create the ROC curve. Again, since the event we are predicting is the first level in the `price_category` factor (“above”), we provide `roc_curve()` with the relevant class probability `.pred_above`:
 
 ```{r}
-
 last_fit_rf %>% 
   collect_predictions() %>% 
-  roc_curve(price_class, .pred_class) %>% 
+  roc_curve(price_category, .pred_above) %>% 
   autoplot()
-
 ```
 
+Based on all of the results, the validation set and test set performance statistics are very close, so we would have pretty high confidence that our random forest model with the selected hyperparameters would perform well when predicting new data.
