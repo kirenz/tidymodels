@@ -10,7 +10,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   collapse = FALSE,
   dpi = 300,
-  cache = TRUE,
+  cache = FALSE,
   warning = FALSE,
   message = FALSE, 
   out.width = "100%", 

@@ -97,8 +97,9 @@
 
 <span class="va">rf_spec</span> <span class="op">&lt;-</span> 
   <span class="fu">rand_forest</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">set_engine</span><span class="op">(</span><span class="st">"ranger"</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">set_engine</span><span class="op">(</span><span class="st">"ranger"</span>, importance <span class="op">=</span> <span class="st">"impurity"</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu">set_mode</span><span class="op">(</span><span class="st">"classification"</span><span class="op">)</span></code></pre></div>
+<p>When we set the engine, we add <code>importance = "impurity"</code>. This will provide variable importance scores for this model, which gives some insight into which predictors drive model performance.</p>
 </div>
 <div id="boosted-tree-xgboost-1" class="section level3" number="11.1.3">
 <h3>
@@ -232,7 +233,8 @@
 <span class="header-section-number">11.3.1</span> Logistic regression<a class="anchor" aria-label="anchor" href="#logistic-regression-2"><i class="fas fa-link"></i></a>
 </h3>
 <p>We use our workflow object to perform resampling. Furthermore, we use
-<code>metric_set()</code>to choose some classification performance metrics provided by the <code>yardstick</code> package. Visit <a href="https://yardstick.tidymodels.org/reference/index.html"><code>yardsticks</code> reference</a> to see the complete list of all possible metrics.</p>
+<code>metric_set()</code>to choose some common classification performance metrics provided by the <code>yardstick</code> package. Visit <a href="https://yardstick.tidymodels.org/reference/index.html"><code>yardsticks</code> reference</a> to see the complete list of all possible metrics.</p>
+<p>Note that Cohen’s <em>kappa</em> coefficient (κ) is a similar measure to accuracy, but is normalized by the accuracy that would be expected by chance alone and is very useful when one or more classes have large frequency distributions. The higher the value, the better.</p>
 <div class="sourceCode" id="cb154"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">log_res</span> <span class="op">&lt;-</span> 
   <span class="va">log_wflow</span> <span class="op">%&gt;%</span> 
@@ -242,15 +244,88 @@
       <span class="va">recall</span>, <span class="va">precision</span>, <span class="va">f_meas</span>, 
       <span class="va">accuracy</span>, <span class="va">kap</span>,
       <span class="va">roc_auc</span>, <span class="va">sens</span>, <span class="va">spec</span><span class="op">)</span>,
-    control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+    control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>
+      save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
     <span class="op">)</span> </code></pre></div>
-<p>Note that Cohen’s <em>kappa</em> coefficient (κ) is a similar measure to accuracy, but is normalized by the accuracy that would be expected by chance alone and is very useful when one or more classes have large frequency distributions. The higher the value, the better.</p>
-<div id="performance-metrics" class="section level4" number="11.3.1.1">
+<div id="model-coefficients" class="section level4" number="11.3.1.1">
 <h4>
-<span class="header-section-number">11.3.1.1</span> Performance metrics<a class="anchor" aria-label="anchor" href="#performance-metrics"><i class="fas fa-link"></i></a>
+<span class="header-section-number">11.3.1.1</span> Model coefficients<a class="anchor" aria-label="anchor" href="#model-coefficients"><i class="fas fa-link"></i></a>
+</h4>
+<p>The above described method to obtain <code>log_res</code> is fine if we are not interested in model coefficients. However, if we would like to extract the model coeffcients from <code>fit_resamples</code>, we need to proceed as follows:</p>
+<div class="sourceCode" id="cb155"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># save model coefficients for a fitted model object from a workflow</span>
+<span class="va">get_model</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span>
+  <span class="fu">pull_workflow_fit</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+    <span class="fu">tidy</span><span class="op">(</span><span class="op">)</span>
+<span class="op">}</span>
+
+<span class="co"># same as before with one exception</span>
+<span class="va">log_res_2</span> <span class="op">&lt;-</span> 
+  <span class="va">log_wflow</span> <span class="op">%&gt;%</span> 
+  <span class="fu">fit_resamples</span><span class="op">(</span>
+    resamples <span class="op">=</span> <span class="va">cv_folds</span>, 
+    metrics <span class="op">=</span> <span class="fu">metric_set</span><span class="op">(</span>
+      <span class="va">recall</span>, <span class="va">precision</span>, <span class="va">f_meas</span>, 
+      <span class="va">accuracy</span>, <span class="va">kap</span>,
+      <span class="va">roc_auc</span>, <span class="va">sens</span>, <span class="va">spec</span><span class="op">)</span>,
+    control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>
+      save_pred <span class="op">=</span> <span class="cn">TRUE</span>,
+      extract <span class="op">=</span> <span class="va">get_model</span><span class="op">)</span> <span class="co"># use extract and our new function</span>
+    <span class="op">)</span> 
+
+<span class="va">log_res_2</span></code></pre></div>
+<pre><code>#&gt; # Resampling results
+#&gt; # 5-fold cross-validation using stratification 
+#&gt; # A tibble: 5 x 6
+#&gt;   splits          id    .metrics      .notes      .extracts     .predictions    
+#&gt;   &lt;list&gt;          &lt;chr&gt; &lt;list&gt;        &lt;list&gt;      &lt;list&gt;        &lt;list&gt;          
+#&gt; 1 &lt;split [12.4K/… Fold1 &lt;tibble [8 ×… &lt;tibble [0… &lt;tibble [1 ×… &lt;tibble [3,097 …
+#&gt; 2 &lt;split [12.4K/… Fold2 &lt;tibble [8 ×… &lt;tibble [0… &lt;tibble [1 ×… &lt;tibble [3,097 …
+#&gt; 3 &lt;split [12.4K/… Fold3 &lt;tibble [8 ×… &lt;tibble [0… &lt;tibble [1 ×… &lt;tibble [3,096 …
+#&gt; 4 &lt;split [12.4K/… Fold4 &lt;tibble [8 ×… &lt;tibble [0… &lt;tibble [1 ×… &lt;tibble [3,095 …
+#&gt; 5 &lt;split [12.4K/… Fold5 &lt;tibble [8 ×… &lt;tibble [0… &lt;tibble [1 ×… &lt;tibble [3,095 …</code></pre>
+<p>Now there is a <code>.extracts</code> column with nested tibbles.</p>
+<div class="sourceCode" id="cb157"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">log_res_2</span><span class="op">$</span><span class="va">.extracts</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 1 x 2
+#&gt;   .extracts        .config             
+#&gt;   &lt;list&gt;           &lt;chr&gt;               
+#&gt; 1 &lt;tibble [8 × 5]&gt; Preprocessor1_Model1</code></pre>
+<p>To get the results use:</p>
+<div class="sourceCode" id="cb159"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">log_res_2</span><span class="op">$</span><span class="va">.extracts</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></code></pre></div>
+<pre><code>#&gt; [[1]]
+#&gt; # A tibble: 8 x 5
+#&gt;   term                     estimate std.error statistic  p.value
+#&gt;   &lt;chr&gt;                       &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+#&gt; 1 (Intercept)                -2.02     0.0510  -39.6    0.      
+#&gt; 2 median_income              -1.91     0.0470  -40.6    0.      
+#&gt; 3 rooms_per_household         0.252    0.0376    6.70   2.14e-11
+#&gt; 4 population_per_household    0.485    0.0297   16.3    7.36e-60
+#&gt; 5 ocean_proximity_INLAND      2.92     0.0729   40.0    0.      
+#&gt; 6 ocean_proximity_ISLAND    -11.4    160.       -0.0714 9.43e- 1
+#&gt; # … with 2 more rows</code></pre>
+<p>All of the results can be flattened and collected using:</p>
+<div class="sourceCode" id="cb161"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">all_coef</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map_dfr</a></span><span class="op">(</span><span class="va">log_res_2</span><span class="op">$</span><span class="va">.extracts</span>, <span class="op">~</span> <span class="va">.x</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></code></pre></div>
+<p>Show all of the resample coefficients for a single predictor:</p>
+<div class="sourceCode" id="cb162"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/stats/filter.html">filter</a></span><span class="op">(</span><span class="va">all_coef</span>, <span class="va">term</span> <span class="op">==</span> <span class="st">"median_income"</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 5 x 5
+#&gt;   term          estimate std.error statistic p.value
+#&gt;   &lt;chr&gt;            &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
+#&gt; 1 median_income    -1.91    0.0470     -40.6       0
+#&gt; 2 median_income    -1.91    0.0469     -40.6       0
+#&gt; 3 median_income    -1.89    0.0469     -40.4       0
+#&gt; 4 median_income    -1.96    0.0480     -40.8       0
+#&gt; 5 median_income    -1.90    0.0468     -40.5       0</code></pre>
+</div>
+<div id="performance-metrics" class="section level4" number="11.3.1.2">
+<h4>
+<span class="header-section-number">11.3.1.2</span> Performance metrics<a class="anchor" aria-label="anchor" href="#performance-metrics"><i class="fas fa-link"></i></a>
 </h4>
 <p>Show average performance over all folds:</p>
-<div class="sourceCode" id="cb155"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb164"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">log_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
 <pre><code>#&gt; # A tibble: 8 x 6
 #&gt;   .metric   .estimator  mean     n  std_err .config             
@@ -263,7 +338,7 @@
 #&gt; 6 roc_auc   binary     0.918     5 0.00117  Preprocessor1_Model1
 #&gt; # … with 2 more rows</code></pre>
 <p>Show performance for every single fold:</p>
-<div class="sourceCode" id="cb157"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb166"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">log_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
 <pre><code>#&gt; # A tibble: 40 x 5
 #&gt;   id    .metric   .estimator .estimate .config             
@@ -276,56 +351,66 @@
 #&gt; 6 Fold1 sens      binary         0.886 Preprocessor1_Model1
 #&gt; # … with 34 more rows</code></pre>
 </div>
-<div id="collect-predictions" class="section level4" number="11.3.1.2">
+<div id="collect-predictions" class="section level4" number="11.3.1.3">
 <h4>
-<span class="header-section-number">11.3.1.2</span> Collect predictions<a class="anchor" aria-label="anchor" href="#collect-predictions"><i class="fas fa-link"></i></a>
+<span class="header-section-number">11.3.1.3</span> Collect predictions<a class="anchor" aria-label="anchor" href="#collect-predictions"><i class="fas fa-link"></i></a>
 </h4>
 <p>To obtain the actual model predictions, we use the function <code>collect_predictions</code> and save the result as <code>log_pred</code>:</p>
-<div class="sourceCode" id="cb159"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb168"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">log_pred</span> <span class="op">&lt;-</span> 
   <span class="va">log_res</span> <span class="op">%&gt;%</span>
   <span class="fu">collect_predictions</span><span class="op">(</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="confusion-matrix" class="section level4" number="11.3.1.3">
+<div id="confusion-matrix" class="section level4" number="11.3.1.4">
 <h4>
-<span class="header-section-number">11.3.1.3</span> Confusion matrix<a class="anchor" aria-label="anchor" href="#confusion-matrix"><i class="fas fa-link"></i></a>
+<span class="header-section-number">11.3.1.4</span> Confusion matrix<a class="anchor" aria-label="anchor" href="#confusion-matrix"><i class="fas fa-link"></i></a>
 </h4>
-<p>Now we can use the predictions to create a <em>confusion matrix</em>:</p>
-<div class="sourceCode" id="cb160"><pre class="downlit sourceCode r">
+<p>Now we can use the predictions to create a <em>confusion matrix</em> with <code>conf_mat()</code>:</p>
+<div class="sourceCode" id="cb169"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">log_pred</span> <span class="op">%&gt;%</span>
-  <span class="fu">conf_mat</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_class</span><span class="op">)</span></code></pre></div>
+  <span class="fu">conf_mat</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_class</span><span class="op">)</span> </code></pre></div>
 <pre><code>#&gt;           Truth
 #&gt; Prediction above below
 #&gt;      above  8788  1306
 #&gt;      below  1025  4361</code></pre>
-</div>
-<div id="roc-curve" class="section level4" number="11.3.1.4">
-<h4>
-<span class="header-section-number">11.3.1.4</span> ROC-Curve<a class="anchor" aria-label="anchor" href="#roc-curve"><i class="fas fa-link"></i></a>
-</h4>
-<p>We can also make an ROC curve for every fold (see <a href="https://developers.google.com/machine-learning/crash-course/classification/roc-and-auc">Google Developers</a> for more details).</p>
-<div class="sourceCode" id="cb162"><pre class="downlit sourceCode r">
+<p>Additionally, the confusion matrix can quickly be visualized in different formats using <code>autoplot()</code>. Type mosaic:</p>
+<div class="sourceCode" id="cb171"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">log_pred</span> <span class="op">%&gt;%</span>
-  <span class="fu">group_by</span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op">%&gt;%</span>
-  <span class="fu">roc_curve</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_above</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">specificity</span>, <span class="va">sensitivity</span>, color <span class="op">=</span> <span class="va">id</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_abline</span><span class="op">(</span>lty <span class="op">=</span> <span class="fl">2</span>, color <span class="op">=</span> <span class="st">"gray80"</span>, size <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_path</span><span class="op">(</span>show.legend <span class="op">=</span> <span class="cn">FALSE</span>, alpha <span class="op">=</span> <span class="fl">0.6</span>, size <span class="op">=</span> <span class="fl">1.2</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">coord_equal</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-111-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+  <span class="fu">conf_mat</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_class</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">autoplot</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"mosaic"</span><span class="op">)</span></code></pre></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-116-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<p>Or type heatmap:</p>
+<div class="sourceCode" id="cb172"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">log_pred</span> <span class="op">%&gt;%</span>
+  <span class="fu">conf_mat</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_class</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">autoplot</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"heatmap"</span><span class="op">)</span></code></pre></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-117-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
 </div>
-<div id="probability-distributions" class="section level4" number="11.3.1.5">
+<div id="roc-curve" class="section level4" number="11.3.1.5">
 <h4>
-<span class="header-section-number">11.3.1.5</span> Probability distributions<a class="anchor" aria-label="anchor" href="#probability-distributions"><i class="fas fa-link"></i></a>
+<span class="header-section-number">11.3.1.5</span> ROC-Curve<a class="anchor" aria-label="anchor" href="#roc-curve"><i class="fas fa-link"></i></a>
 </h4>
-<p>Plot predicted probability distributions for out two classes.</p>
-<div class="sourceCode" id="cb163"><pre class="downlit sourceCode r">
+<p>We can also make an ROC curve for our 5 folds. Since the category we are predicting is the first level in the <code>price_category</code> factor (“above”), we provide <code>roc_curve()</code> with the relevant class probability <code>.pred_above</code>:</p>
+<div class="sourceCode" id="cb173"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">log_pred</span> <span class="op">%&gt;%</span>
+  <span class="fu">group_by</span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op">%&gt;%</span> <span class="co"># id contains our folds</span>
+  <span class="fu">roc_curve</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_above</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">autoplot</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-118-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<p>Visit <a href="https://developers.google.com/machine-learning/crash-course/classification/roc-and-auc">Google developer’s Machine Learning Crashcourse</a> to learn more about the ROC-Curve.</p>
+</div>
+<div id="probability-distributions" class="section level4" number="11.3.1.6">
+<h4>
+<span class="header-section-number">11.3.1.6</span> Probability distributions<a class="anchor" aria-label="anchor" href="#probability-distributions"><i class="fas fa-link"></i></a>
+</h4>
+<p>Plot predicted probability distributions for our two classes.</p>
+<div class="sourceCode" id="cb174"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">log_res</span> <span class="op">%&gt;%</span>
   <span class="fu">collect_predictions</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu">ggplot</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">geom_density</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">.pred_above</span>, fill <span class="op">=</span> <span class="va">price_category</span><span class="op">)</span>, 
                alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></code></pre></div>
-<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-112-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-119-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
 </div>
 </div>
 <div id="random-forest-5" class="section level3" number="11.3.2">
@@ -333,7 +418,7 @@
 <span class="header-section-number">11.3.2</span> Random forest<a class="anchor" aria-label="anchor" href="#random-forest-5"><i class="fas fa-link"></i></a>
 </h3>
 <p>We don’t repeat all of the steps shown in logistic regression and just focus on the performance metrics.</p>
-<div class="sourceCode" id="cb164"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb175"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">rf_res</span> <span class="op">&lt;-</span>
   <span class="va">rf_wflow</span> <span class="op">%&gt;%</span> 
   <span class="fu">fit_resamples</span><span class="op">(</span>
@@ -349,12 +434,12 @@
 <pre><code>#&gt; # A tibble: 8 x 6
 #&gt;   .metric   .estimator  mean     n std_err .config             
 #&gt;   &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
-#&gt; 1 accuracy  binary     0.858     5 0.00305 Preprocessor1_Model1
-#&gt; 2 f_meas    binary     0.889     5 0.00262 Preprocessor1_Model1
-#&gt; 3 kap       binary     0.690     5 0.00615 Preprocessor1_Model1
-#&gt; 4 precision binary     0.877     5 0.00175 Preprocessor1_Model1
-#&gt; 5 recall    binary     0.903     5 0.00510 Preprocessor1_Model1
-#&gt; 6 roc_auc   binary     0.926     5 0.00180 Preprocessor1_Model1
+#&gt; 1 accuracy  binary     0.858     5 0.00316 Preprocessor1_Model1
+#&gt; 2 f_meas    binary     0.889     5 0.00263 Preprocessor1_Model1
+#&gt; 3 kap       binary     0.691     5 0.00656 Preprocessor1_Model1
+#&gt; 4 precision binary     0.877     5 0.00185 Preprocessor1_Model1
+#&gt; 5 recall    binary     0.902     5 0.00435 Preprocessor1_Model1
+#&gt; 6 roc_auc   binary     0.926     5 0.00187 Preprocessor1_Model1
 #&gt; # … with 2 more rows</code></pre>
 </div>
 <div id="xgboost-3" class="section level3" number="11.3.3">
@@ -362,7 +447,7 @@
 <span class="header-section-number">11.3.3</span> XGBoost<a class="anchor" aria-label="anchor" href="#xgboost-3"><i class="fas fa-link"></i></a>
 </h3>
 <p>We don’t repeat all of the steps shown in logistic regression and just focus on the performance metrics.</p>
-<div class="sourceCode" id="cb166"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb177"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">xgb_res</span> <span class="op">&lt;-</span> 
   <span class="va">xgb_wflow</span> <span class="op">%&gt;%</span> 
   <span class="fu">fit_resamples</span><span class="op">(</span>
@@ -391,7 +476,7 @@
 <span class="header-section-number">11.3.4</span> K-nearest neighbor<a class="anchor" aria-label="anchor" href="#k-nearest-neighbor-5"><i class="fas fa-link"></i></a>
 </h3>
 <p>We don’t repeat all of the steps shown in logistic regression and just focus on the performance metrics.</p>
-<div class="sourceCode" id="cb168"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb179"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">knn_res</span> <span class="op">&lt;-</span> 
   <span class="va">knn_wflow</span> <span class="op">%&gt;%</span> 
   <span class="fu">fit_resamples</span><span class="op">(</span>
@@ -420,7 +505,7 @@
 <span class="header-section-number">11.3.5</span> Neural network<a class="anchor" aria-label="anchor" href="#neural-network-2"><i class="fas fa-link"></i></a>
 </h3>
 <p>We don’t repeat all of the steps shown in logistic regression and just focus on the performance metrics.</p>
-<div class="sourceCode" id="cb170"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb181"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">nnet_res</span> <span class="op">&lt;-</span> 
   <span class="va">nnet_wflow</span> <span class="op">%&gt;%</span> 
   <span class="fu">fit_resamples</span><span class="op">(</span>
@@ -436,12 +521,12 @@
 <pre><code>#&gt; # A tibble: 8 x 6
 #&gt;   .metric   .estimator  mean     n std_err .config             
 #&gt;   &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
-#&gt; 1 accuracy  binary     0.857     5 0.00295 Preprocessor1_Model1
-#&gt; 2 f_meas    binary     0.888     5 0.00260 Preprocessor1_Model1
-#&gt; 3 kap       binary     0.690     5 0.00584 Preprocessor1_Model1
-#&gt; 4 precision binary     0.881     5 0.00142 Preprocessor1_Model1
-#&gt; 5 recall    binary     0.895     5 0.00522 Preprocessor1_Model1
-#&gt; 6 roc_auc   binary     0.926     5 0.00167 Preprocessor1_Model1
+#&gt; 1 accuracy  binary     0.857     5 0.00311 Preprocessor1_Model1
+#&gt; 2 f_meas    binary     0.888     5 0.00266 Preprocessor1_Model1
+#&gt; 3 kap       binary     0.690     5 0.00633 Preprocessor1_Model1
+#&gt; 4 precision binary     0.881     5 0.00162 Preprocessor1_Model1
+#&gt; 5 recall    binary     0.896     5 0.00468 Preprocessor1_Model1
+#&gt; 6 roc_auc   binary     0.927     5 0.00147 Preprocessor1_Model1
 #&gt; # … with 2 more rows</code></pre>
 </div>
 <div id="compare-models-1" class="section level3" number="11.3.6">
@@ -449,7 +534,7 @@
 <span class="header-section-number">11.3.6</span> Compare models<a class="anchor" aria-label="anchor" href="#compare-models-1"><i class="fas fa-link"></i></a>
 </h3>
 <p>Extract metrics from our models to compare them:</p>
-<div class="sourceCode" id="cb172"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb183"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">log_metrics</span> <span class="op">&lt;-</span> 
   <span class="va">log_res</span> <span class="op">%&gt;%</span> 
   <span class="fu">collect_metrics</span><span class="op">(</span>summarise <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">%&gt;%</span>
@@ -515,9 +600,9 @@
      <span class="fu">aes</span><span class="op">(</span>label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">mean_roc_auc</span>, <span class="fl">2</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">mean_roc_auc</span> <span class="op">+</span> <span class="fl">0.08</span><span class="op">)</span>,
      vjust <span class="op">=</span> <span class="fl">1</span>
   <span class="op">)</span></code></pre></div>
-<p><img src="Tidymodels_files/figure-html/unnamed-chunk-117-1.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-117-2.png" width="100%" height="100%" style="display: block; margin: auto;"></p>
+<p><img src="Tidymodels_files/figure-html/unnamed-chunk-124-1.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-124-2.png" width="100%" height="100%" style="display: block; margin: auto;"></p>
 <p>Note that the model results are all quite similar. In our example we choose the F1-Score as performance measure to select the best model. Let’s find the maximum mean F1-Score:</p>
-<div class="sourceCode" id="cb173"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb184"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">model_comp</span> <span class="op">%&gt;%</span> <span class="fu">slice_max</span><span class="op">(</span><span class="va">mean_f_meas</span><span class="op">)</span></code></pre></div>
 <pre><code>#&gt; # A tibble: 1 x 17
 #&gt;   model mean_accuracy mean_f_meas mean_kap mean_precision mean_recall
@@ -530,33 +615,59 @@
 <p>Now it’s time to fit the best model one last time to the full <em>training set</em> and evaluate the resulting final model on the <em>test set</em>.</p>
 </div>
 </div>
-<div id="last-fit-and-evaluation-on-test-set-1" class="section level2" number="11.4">
+<div id="last-evaluation-on-test-set" class="section level2" number="11.4">
 <h2>
-<span class="header-section-number">11.4</span> Last fit and evaluation on test set<a class="anchor" aria-label="anchor" href="#last-fit-and-evaluation-on-test-set-1"><i class="fas fa-link"></i></a>
+<span class="header-section-number">11.4</span> Last evaluation on test set<a class="anchor" aria-label="anchor" href="#last-evaluation-on-test-set"><i class="fas fa-link"></i></a>
 </h2>
-<p>Tidymodels provides the function <a href="https://tune.tidymodels.org/reference/last_fit.html"><code>last_fit()</code></a> which fits a model to the <em>training data</em> and evaluates it on the <em>test set</em>. We just need to provide the workflow object of the best model as well as the <strong>data split</strong> object (not the training data).</p>
-<div class="sourceCode" id="cb175"><pre class="downlit sourceCode r">
+<p>Tidymodels provides the function <a href="https://tune.tidymodels.org/reference/last_fit.html"><code>last_fit()</code></a> which fits a model to the whole <em>training data</em> and evaluates it on the <em>test set</em>. We just need to provide the workflow object of the best model as well as the <strong>data split</strong> object (not the training data).</p>
+<div class="sourceCode" id="cb186"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">last_fit_rf</span> <span class="op">&lt;-</span> <span class="fu">last_fit</span><span class="op">(</span><span class="va">rf_wflow</span>, 
                         split <span class="op">=</span> <span class="va">data_split</span>,
                         metrics <span class="op">=</span> <span class="fu">metric_set</span><span class="op">(</span>
                           <span class="va">recall</span>, <span class="va">precision</span>, <span class="va">f_meas</span>, 
                           <span class="va">accuracy</span>, <span class="va">kap</span>,
-                          <span class="va">roc_auc</span>, <span class="va">sens</span>, <span class="va">spec</span><span class="op">)</span><span class="op">)</span>
-
-<span class="co"># Show performance metrics</span>
-<span class="va">last_fit_rf</span> <span class="op">%&gt;%</span> 
+                          <span class="va">roc_auc</span>, <span class="va">sens</span>, <span class="va">spec</span><span class="op">)</span>
+                        <span class="op">)</span></code></pre></div>
+<p>Show performance metrics</p>
+<div class="sourceCode" id="cb187"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">last_fit_rf</span> <span class="op">%&gt;%</span> 
   <span class="fu">collect_metrics</span><span class="op">(</span><span class="op">)</span></code></pre></div>
 <pre><code>#&gt; # A tibble: 8 x 4
 #&gt;   .metric   .estimator .estimate .config             
 #&gt;   &lt;chr&gt;     &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
-#&gt; 1 recall    binary         0.894 Preprocessor1_Model1
+#&gt; 1 recall    binary         0.893 Preprocessor1_Model1
 #&gt; 2 precision binary         0.878 Preprocessor1_Model1
-#&gt; 3 f_meas    binary         0.886 Preprocessor1_Model1
-#&gt; 4 accuracy  binary         0.854 Preprocessor1_Model1
-#&gt; 5 kap       binary         0.683 Preprocessor1_Model1
-#&gt; 6 sens      binary         0.894 Preprocessor1_Model1
+#&gt; 3 f_meas    binary         0.885 Preprocessor1_Model1
+#&gt; 4 accuracy  binary         0.853 Preprocessor1_Model1
+#&gt; 5 kap       binary         0.682 Preprocessor1_Model1
+#&gt; 6 sens      binary         0.893 Preprocessor1_Model1
 #&gt; # … with 2 more rows</code></pre>
-<p>And this is our final result. Remember that if a model fit to the training dataset also fits the test dataset well, minimal <em>overfitting</em> has taken place. This seems to be also the case in our example.</p>
+<p>And these are our final performance metrics. Remember that if a model fit to the training dataset also fits the test dataset well, minimal <em>overfitting</em> has taken place. This seems to be also the case in our example.</p>
+<p>To learn more about the model we can access the variable importance scores via the <code>.workflow</code> column. We first need to pluck out the first element in the workflow column, then pull out the fit from the workflow object. Finally, the <code>vip</code> package helps us visualize the variable importance scores for the top features. Note that we can’t create this type of plot for every model engine.</p>
+<div class="sourceCode" id="cb189"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/koalaverse/vip/">vip</a></span><span class="op">)</span>
+
+<span class="va">last_fit_rf</span> <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="https://purrr.tidyverse.org/reference/pluck.html">pluck</a></span><span class="op">(</span><span class="st">".workflow"</span>, <span class="fl">1</span><span class="op">)</span> <span class="op">%&gt;%</span>   
+  <span class="fu">pull_workflow_fit</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="https://rdrr.io/pkg/vip/man/vip.html">vip</a></span><span class="op">(</span>num_features <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></code></pre></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-128-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<p>The two most important predictors in whether a district has a median house value above or below 150000 dollars were the ocean proximity inland and the median income.</p>
+<p>Take a look at the confusion matrix:</p>
+<div class="sourceCode" id="cb190"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">last_fit_rf</span> <span class="op">%&gt;%</span>
+  <span class="fu">collect_predictions</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">conf_mat</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_class</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">autoplot</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"heatmap"</span><span class="op">)</span></code></pre></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-129-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<p>Let’s create the ROC curve. Again, since the event we are predicting is the first level in the <code>price_category</code> factor (“above”), we provide <code>roc_curve()</code> with the relevant class probability <code>.pred_above</code>:</p>
+<div class="sourceCode" id="cb191"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">last_fit_rf</span> <span class="op">%&gt;%</span> 
+  <span class="fu">collect_predictions</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">roc_curve</span><span class="op">(</span><span class="va">price_category</span>, <span class="va">.pred_above</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">autoplot</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-130-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
+<p>Based on all of the results, the validation set and test set performance statistics are very close, so we would have pretty high confidence that our random forest model with the selected hyperparameters would perform well when predicting new data.</p>
 
 </div>
 </div>
@@ -595,7 +706,7 @@
 <li><a class="nav-link" href="#compare-models-1"><span class="header-section-number">11.3.6</span> Compare models</a></li>
 </ul>
 </li>
-<li><a class="nav-link" href="#last-fit-and-evaluation-on-test-set-1"><span class="header-section-number">11.4</span> Last fit and evaluation on test set</a></li>
+<li><a class="nav-link" href="#last-evaluation-on-test-set"><span class="header-section-number">11.4</span> Last evaluation on test set</a></li>
 </ul>
 
       <div class="book-extra">
