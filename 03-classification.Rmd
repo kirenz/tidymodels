@@ -777,9 +777,11 @@ library(ranger)
 
 rf_spec <- 
   rand_forest() %>% 
-  set_engine("ranger") %>% 
+  set_engine("ranger", importance = "impurity") %>% 
   set_mode("classification")
 ```
+
+When we set the engine, we add `importance = "impurity"`. This will provide variable importance scores for this model, which gives some insight into which predictors drive model performance.
 
 ### Boosted tree (XGBoost)
 
@@ -894,7 +896,9 @@ Finally, we collect the performance metrics with `collect_metrics()` and pick th
 ### Logistic regression
 
 We use our workflow object to perform resampling. Furthermore, we use 
-`metric_set() `to choose some classification performance metrics provided by the `yardstick` package. Visit [`yardsticks` reference](https://yardstick.tidymodels.org/reference/index.html) to see the complete list of all possible metrics.
+`metric_set() `to choose some common classification performance metrics provided by the `yardstick` package. Visit [`yardsticks` reference](https://yardstick.tidymodels.org/reference/index.html) to see the complete list of all possible metrics. 
+
+Note that Cohen's *kappa* coefficient (κ) is a similar measure to accuracy, but is normalized by the accuracy that would be expected by chance alone and is very useful when one or more classes have large frequency distributions. The higher the value, the better.
 
 ```{r}
 log_res <- 
@@ -905,15 +909,67 @@ log_res <-
       recall, precision, f_meas, 
       accuracy, kap,
       roc_auc, sens, spec),
-    control = control_resamples(save_pred = TRUE)
+    control = control_resamples(
+      save_pred = TRUE)
     ) 
 ```
 
 
-Note that Cohen's *kappa* coefficient (κ) is a similar measure to accuracy, but is normalized by the accuracy that would be expected by chance alone and is very useful when one or more classes have large frequency distributions. The higher the value, the better.
+#### Model coefficients
+
+The above described method to obtain `log_res` is fine if we are not interested in model coefficients. However, if we would like to extract the model coeffcients from `fit_resamples`, we need to proceed as follows:
+
+```{r}
+# save model coefficients for a fitted model object from a workflow
+get_model <- function(x) {
+  pull_workflow_fit(x) %>% 
+    tidy()
+}
+
+# same as before with one exception
+log_res_2 <- 
+  log_wflow %>% 
+  fit_resamples(
+    resamples = cv_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, 
+      accuracy, kap,
+      roc_auc, sens, spec),
+    control = control_resamples(
+      save_pred = TRUE,
+      extract = get_model) # use extract and our new function
+    ) 
+
+log_res_2
+
+```
+
+Now there is a `.extracts` column with nested tibbles.
+
+```{r}
+log_res_2$.extracts[[1]]
+```
+
+To get the results use:
+
+```{r}
+log_res_2$.extracts[[1]][[1]]
+```
+
+All of the results can be flattened and collected using:
+
+```{r}
+all_coef <- map_dfr(log_res_2$.extracts, ~ .x[[1]][[1]])
+```
+
+Show all of the resample coefficients for a single predictor:
+
+```{r}
+filter(all_coef, term == "median_income")
+```
+
 
 #### Performance metrics
-
 
 Show average performance over all folds:
 
@@ -926,6 +982,7 @@ Show performance for every single fold:
 ```{r}
 log_res %>%  collect_metrics(summarize = FALSE)
 ```
+
 
 
 #### Collect predictions
@@ -942,11 +999,28 @@ log_pred <-
 
 #### Confusion matrix
 
-Now we can use the predictions to create a *confusion matrix*:
+Now we can use the predictions to create a *confusion matrix* with `conf_mat()`:
 
 ```{r}
 log_pred %>%
-  conf_mat(price_category, .pred_class)
+  conf_mat(price_category, .pred_class) 
+```
+
+Additionally, the confusion matrix can quickly be visualized in different formats using `autoplot()`. Type mosaic:
+
+
+```{r}
+log_pred %>%
+  conf_mat(price_category, .pred_class) %>% 
+  autoplot(type = "mosaic")
+```
+
+Or type heatmap:
+
+```{r}
+log_pred %>%
+  conf_mat(price_category, .pred_class) %>% 
+  autoplot(type = "heatmap")
 ```
 
 
@@ -959,10 +1033,7 @@ We can also make an ROC curve for every fold  (see [Google Developers](https://d
 log_pred %>%
   group_by(id) %>%
   roc_curve(price_category, .pred_above) %>% 
-  ggplot(aes(1 - specificity, sensitivity, color = id)) +
-  geom_abline(lty = 2, color = "gray80", size = 1.5) +
-  geom_path(show.legend = FALSE, alpha = 0.6, size = 1.2) +
-  coord_equal()
+  autoplot()
 
 ```
 
@@ -1150,12 +1221,62 @@ last_fit_rf <- last_fit(rf_wflow,
                         metrics = metric_set(
                           recall, precision, f_meas, 
                           accuracy, kap,
-                          roc_auc, sens, spec))
+                          roc_auc, sens, spec)
+                        )
 
 # Show performance metrics
 last_fit_rf %>% 
   collect_metrics()
 ```
 
-And this is our final result. Remember that if a model fit to the training dataset also fits the test dataset well, minimal *overfitting* has taken place. This seems to be also the case in our example.
+And this is our final model result. Remember that if a model fit to the training dataset also fits the test dataset well, minimal *overfitting* has taken place. This seems to be also the case in our example. 
+
+To learn more about the model we can access the variable importance scores via the `.workflow` column. We first need to pluck out the first element in the workflow column, then pull out the fit from the workflow object. Finally, the `vip` package helps us visualize the variable importance scores for the top features. Note that we can't create this type of plot for every model engine.
+
+
+```{r}
+library(vip)
+
+last_fit_rf %>% 
+  pluck(".workflow", 1) %>%   
+  pull_workflow_fit() %>% 
+  vip(num_features = 10)
+```
+
+The two most important predictors in whether a district has a median house value above or below 150000 dollars were the ocean proximity inland and the median income.  
+
+
+```{r}
+last_fit_rf %>%
+  conf_mat(price_category, .pred_class) 
+```
+
+Additionally, the confusion matrix can quickly be visualized in different formats using `autoplot()`. Type mosaic:
+
+
+```{r}
+log_pred %>%
+  conf_mat(price_category, .pred_class) %>% 
+  autoplot(type = "mosaic")
+```
+
+Or type heatmap:
+
+```{r}
+log_pred %>%
+  conf_mat(price_category, .pred_class) %>% 
+  autoplot(type = "heatmap")
+```
+
+Let’s generate our last ROC curve to visualize. Since the event we are predicting is the first level in the children factor (“children”), we provide roc_curve() with the relevant class probability .pred_children:
+
+
+```{r}
+
+last_fit_rf %>% 
+  collect_predictions() %>% 
+  roc_curve(price_class, .pred_class) %>% 
+  autoplot()
+
+```
 
