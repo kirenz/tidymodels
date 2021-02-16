@@ -625,8 +625,8 @@ The type of data preprocessing is dependent on the data and the type of model be
 Let’s create a base `recipe` for all of our classification models. Note that the sequence of steps matter:
 
 * The `recipe()` function has two arguments: 
- * *A formula*. Any variable on the left-hand side of the tilde (`~`) is considered the model outcome (here, `price_category`). On the right-hand side of the tilde are the predictors. Variables may be listed by name (separated by a `+`), or you can use the dot (`.`) to indicate all other variables as predictors. 
- * *The data*. A recipe is associated with the data set used to create the model. This will typically be the training set, so `data = train_data` here. 
+   1. A formula. Any variable on the left-hand side of the tilde (`~`) is considered the model outcome (here, `price_category`). On the right-hand side of the tilde are the predictors. Variables may be listed by name (separated by a `+`), or you can use the dot (`.`) to indicate all other variables as predictors. 
+   2. The data. A recipe is associated with the data set used to create the model. This will typically be the training set, so `data = train_data` here. 
 
 
 * `update_role()`: This step of adding roles to a recipe is optional; the purpose of using it here is that those two variables can be retained in the data but not included in the model. This can be convenient when, after the model is fit, we want to investigate some poorly predicted value. These ID columns will be available and can be used to try to understand what went wrong. 
@@ -651,6 +651,8 @@ Take a look at the [recipes reference](https://recipes.tidymodels.org/reference/
 * `step_normalize()` normalizes (center and scales) the numeric variables to have a standard deviation of one and a mean of zero. (i.e., z-standardization). 
 
 * `step_dummy()` converts our factor column `ocean_proximity` into numeric binary (0 and 1) variables.
+
+Note that this step may cause problems if your categorical variable has too many levels - especially if some of the levels are very infrequent. In this case you should either drop the variable or pool infrequently occurring values into an "other" category with [`step_other`](https://recipes.tidymodels.org/reference/step_other.html). This steps has to be performed befor `step_dummy`. 
 
 * `step_zv()`: removes any numeric variables that have zero variance.
 
@@ -737,7 +739,7 @@ set.seed(100)
 
 cv_folds <-
  vfold_cv(train_data, 
-          v = 5, # number of folds
+          v = 5, 
           strata = price_category) 
 ```
 
@@ -830,7 +832,6 @@ log_wflow <- # new workflow object
  add_recipe(housing_rec) %>%   # use the new recipe
  add_model(log_spec)   # add your model spec
 
-
 # show object
 log_wflow
 ```
@@ -892,18 +893,27 @@ Finally, we collect the performance metrics with `collect_metrics()` and pick th
 
 ### Logistic regression
 
+We use our workflow object to perform resampling. Furthermore, we use 
+`metric_set() `to choose some classification performance metrics provided by the `yardstick` package. Visit [`yardsticks` reference](https://yardstick.tidymodels.org/reference/index.html) to see the complete list of all possible metrics.
 
 ```{r}
-set.seed(100)
-
 log_res <- 
-  log_wflow %>% # use workflow object
-  fit_resamples(resamples = cv_folds,
-                control = control_resamples(save_pred = TRUE)) 
-                 # save predictions
+  log_wflow %>% 
+  fit_resamples(
+    resamples = cv_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, 
+      accuracy, kap,
+      roc_auc, sens, spec),
+    control = control_resamples(save_pred = TRUE)
+    ) 
 ```
 
-#### Accuracy and AUC
+
+Note that Cohen's *kappa* coefficient (κ) is a similar measure to accuracy, but is normalized by the accuracy that would be expected by chance alone and is very useful when one or more classes have large frequency distributions. The higher the value, the better.
+
+#### Performance metrics
+
 
 Show average performance over all folds:
 
@@ -940,32 +950,26 @@ log_pred %>%
 ```
 
 
-#### Recall, precision, F1
+#### ROC-Curve
 
-Obtain recall, precision and F1-Score:
+We can also make an ROC curve for every fold  (see [Google Developers](https://developers.google.com/machine-learning/crash-course/classification/roc-and-auc) for more details).
 
 ```{r}
-# recall
-log_res %>%
-  collect_predictions() %>%
-  recall(price_category, .pred_class)
 
-# precision
-log_res %>%
-  collect_predictions() %>%
-  precision(price_category, .pred_class)
+log_pred %>%
+  group_by(id) %>%
+  roc_curve(price_category, .pred_above) %>% 
+  ggplot(aes(1 - specificity, sensitivity, color = id)) +
+  geom_abline(lty = 2, color = "gray80", size = 1.5) +
+  geom_path(show.legend = FALSE, alpha = 0.6, size = 1.2) +
+  coord_equal()
 
-# F1 Score
-log_res %>%
-  collect_predictions() %>%
-  f_meas(price_category, .pred_class)
 ```
 
 
 #### Probability distributions
 
 Plot predicted probability distributions for out two classes.
-
 
 ```{r}
 log_res %>%
@@ -978,28 +982,36 @@ log_res %>%
 
 ### Random forest
 
-We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
+We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics.
 
 ```{r}
 rf_res <-
   rf_wflow %>% 
   fit_resamples(
-    resamples = cv_folds,
+    resamples = cv_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, 
+      accuracy, kap,
+      roc_auc, sens, spec),
     control = control_resamples(save_pred = TRUE)
-    )
+    ) 
 
 rf_res %>%  collect_metrics(summarize = TRUE)
 ```
 
 ### XGBoost
 
-We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
+We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics.
 
 ```{r}
 xgb_res <- 
   xgb_wflow %>% 
   fit_resamples(
-    resamples = cv_folds,
+    resamples = cv_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, 
+      accuracy, kap,
+      roc_auc, sens, spec),
     control = control_resamples(save_pred = TRUE)
     ) 
 
@@ -1009,13 +1021,17 @@ xgb_res %>% collect_metrics(summarize = TRUE)
 
 ### K-nearest neighbor
 
-We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
+We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics.
 
 ```{r}
 knn_res <- 
   knn_wflow %>% 
   fit_resamples(
-    resamples = cv_folds,
+    resamples = cv_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, 
+      accuracy, kap,
+      roc_auc, sens, spec),
     control = control_resamples(save_pred = TRUE)
     ) 
 
@@ -1024,13 +1040,17 @@ knn_res %>% collect_metrics(summarize = TRUE)
 
 ### Neural network
 
-We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics accuracy and AUC.
+We don't repeat all of the steps shown in logistic regression and just focus on the performance metrics.
 
 ```{r}
 nnet_res <- 
   nnet_wflow %>% 
   fit_resamples(
-    resamples = cv_folds,
+    resamples = cv_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, 
+      accuracy, kap,
+      roc_auc, sens, spec),
     control = control_resamples(save_pred = TRUE)
     ) 
 
@@ -1040,18 +1060,19 @@ nnet_res %>% collect_metrics(summarize = TRUE)
 
 ### Compare models
 
-Extract the RMSE from our models to compare them:
+Extract metrics from our models to compare them:
 
 ```{r}
+
 log_metrics <- 
   log_res %>% 
   collect_metrics(summarise = TRUE) %>%
-  mutate(model = "logistic")
+  mutate(model = "Logistic Regression") # add the name of the model to every row
 
 rf_metrics <- 
   rf_res %>% 
   collect_metrics(summarise = TRUE) %>%
-  mutate(model = "random forest")
+  mutate(model = "Random Forest")
 
 xgb_metrics <- 
   xgb_res %>% 
@@ -1066,7 +1087,7 @@ knn_metrics <-
 nnet_metrics <- 
   nnet_res %>% 
   collect_metrics(summarise = TRUE) %>%
-  mutate(model = "Neural net")
+  mutate(model = "Neural Net")
 
 # create dataframe with all models
 model_compare <- bind_rows(log_metrics,
@@ -1081,28 +1102,40 @@ model_comp <-
   select(model, .metric, mean, std_err) %>% 
   pivot_wider(names_from = .metric, values_from = c(mean, std_err)) 
 
-# show accuracy 
+# show mean F1-Score for every model
 model_comp %>% 
-  arrange(mean_accuracy) %>% 
-  mutate(model = fct_reorder(model, mean_accuracy)) %>%
-  ggplot(aes(model, mean_accuracy, fill=model)) +
+  arrange(mean_f_meas) %>% 
+  mutate(model = fct_reorder(model, mean_f_meas)) %>% # order results
+  ggplot(aes(model, mean_f_meas, fill=model)) +
   geom_col() +
-  scale_fill_brewer(palette = "Blues")
+  coord_flip() +
+  scale_fill_brewer(palette = "Blues") +
+   geom_text(
+     size = 3,
+     aes(label = round(mean_f_meas, 2), y = mean_f_meas + 0.08),
+     vjust = 1
+  )
 
-# show AUC 
+# show mean area under the curve (auc) per model
 model_comp %>% 
   arrange(mean_roc_auc) %>% 
   mutate(model = fct_reorder(model, mean_roc_auc)) %>%
   ggplot(aes(model, mean_roc_auc, fill=model)) +
   geom_col() +
-  scale_fill_brewer(palette = "Blues")
+  coord_flip() +
+  scale_fill_brewer(palette = "Blues") + 
+     geom_text(
+     size = 3,
+     aes(label = round(mean_roc_auc, 2), y = mean_roc_auc + 0.08),
+     vjust = 1
+  )
 ```
 
-Note that the model results are all quite similar. 
+
+Note that the model results are all quite similar. In our example we choose the F1-Score as performance measure to select the best model. Let's find the maximum mean F1-Score:
 
 ```{r}
-# find maximum accuracy
-model_comp %>% slice_max(mean_accuracy)
+model_comp %>% slice_max(mean_f_meas)
 ```
 
 Now it's time to fit the best model one last time to the full *training set* and evaluate the resulting final model on the *test set*.
@@ -1112,10 +1145,15 @@ Now it's time to fit the best model one last time to the full *training set* and
 Tidymodels provides the function [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html) which fits a model to the *training data* and evaluates it on the *test set*. We just need to provide the workflow object of the best model as well as the **data split** object (not the training data).
 
 ```{r}
-last_fit_xgb <- last_fit(xgb_wflow, split = data_split)
+last_fit_rf <- last_fit(rf_wflow, 
+                        split = data_split,
+                        metrics = metric_set(
+                          recall, precision, f_meas, 
+                          accuracy, kap,
+                          roc_auc, sens, spec))
 
 # Show performance metrics
-last_fit_xgb %>% 
+last_fit_rf %>% 
   collect_metrics()
 ```
 
