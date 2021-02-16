@@ -94,10 +94,10 @@ k-nearest-neighbor-4
 neural-network-1
 evaluate-models-1
 logistic-regression-2
-accuracy-and-auc
+performance-metrics
 collect-predictions
 confusion-matrix
-recall-precision-f1
+roc-curve
 probability-distributions
 random-forest-5
 xgboost-3

@@ -84,7 +84,7 @@
 <span class="header-section-number">10.1</span> Data preparation<a class="anchor" aria-label="anchor" href="#data-preparation-4"><i class="fas fa-link"></i></a>
 </h2>
 <p>Before we create our <code>recipes</code>, we first select the variables which we will use in the model. Note that we keep <code>longitude</code> and <code>latitude</code> to be able to map the data in a later stage but we will not use the variables in our model.</p>
-<div class="sourceCode" id="cb92"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb131"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">housing_df_new</span> <span class="op">&lt;-</span>
   <span class="va">housing_df</span> <span class="op">%&gt;%</span> 
   <span class="fu">select</span><span class="op">(</span> <span class="co"># select our predictors</span>
@@ -97,19 +97,19 @@
     <span class="va">population_per_household</span>
          <span class="op">)</span>
 
-<span class="fu">glimpse</span><span class="op">(</span><span class="va">housing_df_new</span><span class="op">)</span>
-<span class="co">#&gt; Rows: 20,640</span>
-<span class="co">#&gt; Columns: 8</span>
-<span class="co">#&gt; $ longitude                &lt;dbl&gt; -122, -122, -122, -122, -122, -122, -122, -1…</span>
-<span class="co">#&gt; $ latitude                 &lt;dbl&gt; 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, …</span>
-<span class="co">#&gt; $ price_category           &lt;fct&gt; above, above, above, above, above, above, ab…</span>
-<span class="co">#&gt; $ median_income            &lt;dbl&gt; 8.3, 8.3, 7.3, 5.6, 3.8, 4.0, 3.7, 3.1, 2.1,…</span>
-<span class="co">#&gt; $ ocean_proximity          &lt;fct&gt; NEAR BAY, NEAR BAY, NEAR BAY, NEAR BAY, NEAR…</span>
-<span class="co">#&gt; $ bedrooms_per_room        &lt;dbl&gt; 0.15, 0.16, 0.13, 0.18, 0.17, 0.23, 0.19, 0.…</span>
-<span class="co">#&gt; $ rooms_per_household      &lt;dbl&gt; 7.0, 6.2, 8.3, 5.8, 6.3, 4.8, 4.9, 4.8, 4.3,…</span>
-<span class="co">#&gt; $ population_per_household &lt;dbl&gt; 2.6, 2.1, 2.8, 2.5, 2.2, 2.1, 2.1, 1.8, 2.0,…</span></code></pre></div>
+<span class="fu">glimpse</span><span class="op">(</span><span class="va">housing_df_new</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; Rows: 20,640
+#&gt; Columns: 8
+#&gt; $ longitude                &lt;dbl&gt; -122, -122, -122, -122, -122, -122, -122, -1…
+#&gt; $ latitude                 &lt;dbl&gt; 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, …
+#&gt; $ price_category           &lt;fct&gt; above, above, above, above, above, above, ab…
+#&gt; $ median_income            &lt;dbl&gt; 8.3, 8.3, 7.3, 5.6, 3.8, 4.0, 3.7, 3.1, 2.1,…
+#&gt; $ ocean_proximity          &lt;fct&gt; NEAR BAY, NEAR BAY, NEAR BAY, NEAR BAY, NEAR…
+#&gt; $ bedrooms_per_room        &lt;dbl&gt; 0.15, 0.16, 0.13, 0.18, 0.17, 0.23, 0.19, 0.…
+#&gt; $ rooms_per_household      &lt;dbl&gt; 7.0, 6.2, 8.3, 5.8, 6.3, 4.8, 4.9, 4.8, 4.3,…
+#&gt; $ population_per_household &lt;dbl&gt; 2.6, 2.1, 2.8, 2.5, 2.2, 2.1, 2.1, 1.8, 2.0,…</code></pre>
 <p>Furthermore, we need to make a new data split since we updated the original data.</p>
-<div class="sourceCode" id="cb93"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb133"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span>
 
 <span class="va">data_split</span> <span class="op">&lt;-</span> <span class="fu">initial_split</span><span class="op">(</span><span class="va">housing_df_new</span>, <span class="co"># updated data</span>
@@ -126,19 +126,48 @@
 <p>The type of data preprocessing is dependent on the data and the type of model being fit. The excellent book “Tidy Modeling with R” provides an <a href="https://www.tmwr.org/pre-proc-table.html">appendix with recommendations for baseline levels of preprocessing</a> that are needed for various model functions (<span class="citation"><a href="references.html#ref-Kuhn2021" role="doc-biblioref">Kuhn and Silge</a> (<a href="references.html#ref-Kuhn2021" role="doc-biblioref">2021</a>)</span>)</p>
 <p>Let’s create a base <code>recipe</code> for all of our classification models. Note that the sequence of steps matter:</p>
 <ul>
-<li><p>The <code>recipe()</code> function has two arguments:</p></li>
-<li><p><em>A formula</em>. Any variable on the left-hand side of the tilde (<code><a href="https://rdrr.io/r/base/tilde.html">~</a></code>) is considered the model outcome (here, <code>price_category</code>). On the right-hand side of the tilde are the predictors. Variables may be listed by name (separated by a <code><a href="https://rdrr.io/r/base/Arithmetic.html">+</a></code>), or you can use the dot (<code>.</code>) to indicate all other variables as predictors.</p></li>
-<li><p><em>The data</em>. A recipe is associated with the data set used to create the model. This will typically be the training set, so <code>data = train_data</code> here.</p></li>
+<li>
+<p>The <code>recipe()</code> function has two arguments:</p>
+<ol style="list-style-type: decimal">
+<li>A formula. Any variable on the left-hand side of the tilde (<code><a href="https://rdrr.io/r/base/tilde.html">~</a></code>) is considered the model outcome (here, <code>price_category</code>). On the right-hand side of the tilde are the predictors. Variables may be listed by name (separated by a <code><a href="https://rdrr.io/r/base/Arithmetic.html">+</a></code>), or you can use the dot (<code>.</code>) to indicate all other variables as predictors.</li>
+<li>The data. A recipe is associated with the data set used to create the model. This will typically be the training set, so <code>data = train_data</code> here.</li>
+</ol>
+</li>
 <li><p><code>update_role()</code>: This step of adding roles to a recipe is optional; the purpose of using it here is that those two variables can be retained in the data but not included in the model. This can be convenient when, after the model is fit, we want to investigate some poorly predicted value. These ID columns will be available and can be used to try to understand what went wrong.</p></li>
 <li><p><code>step_naomit()</code> removes observations (rows of data) if they contain NA or NaN values. We use <code>skip = TRUE</code> because we don’t want to perform this part to new data so that the number of samples in the assessment set is the same as the number of predicted values (even if they are NA).</p></li>
+</ul>
+<p>Note that instead of deleting missing values we could also easily substitute (i.e., <em>impute</em>) missing values of variables by one of the following methods (using the training set):</p>
+<ul>
+<li>
+<a href="https://recipes.tidymodels.org/reference/step_medianimpute.html">median</a>,<br>
+</li>
+<li>
+<a href="https://recipes.tidymodels.org/reference/step_meanimpute.html">mean</a>,<br>
+</li>
+<li>
+<a href="https://recipes.tidymodels.org/reference/step_modeimpute.html">mode</a>,</li>
+<li>
+<a href="https://recipes.tidymodels.org/reference/step_knnimpute.html">k-nearest neighbors</a>,<br>
+</li>
+<li>
+<a href="https://recipes.tidymodels.org/reference/step_impute_linear.html">linear model</a>,<br>
+</li>
+<li><a href="https://recipes.tidymodels.org/reference/step_bagimpute.html">bagged tree models</a></li>
+</ul>
+<p>Take a look at the <a href="https://recipes.tidymodels.org/reference/index.html">recipes reference</a> for an overview about all possible imputation methods.</p>
+<ul>
 <li><p><code>step_novel()</code> converts all nominal variables to factors and takes care of other issues related to categorical variables.</p></li>
 <li><p><code>step_log()</code> will log transform data (since some of our numerical variables are right-skewed). Note that this step can not be performed on negative numbers.</p></li>
 <li><p><code>step_normalize()</code> normalizes (center and scales) the numeric variables to have a standard deviation of one and a mean of zero. (i.e., z-standardization).</p></li>
 <li><p><code>step_dummy()</code> converts our factor column <code>ocean_proximity</code> into numeric binary (0 and 1) variables.</p></li>
+</ul>
+<p>Note that this step may cause problems if your categorical variable has too many levels - especially if some of the levels are very infrequent. In this case you should either drop the variable or pool infrequently occurring values into an “other” category with <a href="https://recipes.tidymodels.org/reference/step_other.html"><code>step_other</code></a>. This steps has to be performed befor <code>step_dummy</code>.</p>
+<ul>
 <li><p><code>step_zv()</code>: removes any numeric variables that have zero variance.</p></li>
 <li><p><code>step_corr()</code>: will remove predictor variables that have large correlations with other predictor variables.</p></li>
 </ul>
-<div class="sourceCode" id="cb94"><pre class="downlit sourceCode r">
+<p>Note that the package <a href="https://themis.tidymodels.org/index.html"><code>themis</code></a> contains extra steps for the <code>recipes</code> package for dealing with <strong>imbalanced data</strong>. A classification data set with skewed class proportions is called imbalanced. Classes that make up a large proportion of the data set are called majority classes. Those that make up a smaller proportion are minority classes (see <a href="https://developers.google.com/machine-learning/data-prep/construct/sampling-splitting/imbalanced-data">Google Developers</a> for more details). <code>Themis</code> provides various methods for over-sampling (e.g. SMOTE) and under-sampling. However, we don’t have to use this methods since our data is not imbalanced.</p>
+<div class="sourceCode" id="cb134"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">housing_rec</span> <span class="op">&lt;-</span>
   <span class="fu">recipe</span><span class="op">(</span><span class="va">price_category</span> <span class="op">~</span> <span class="va">.</span>,
          data <span class="op">=</span> <span class="va">train_data</span><span class="op">)</span> <span class="op">%&gt;%</span>
@@ -157,41 +186,41 @@
   <span class="fu">step_zv</span><span class="op">(</span><span class="fu"><a href="http://visdat.njtierney.com//reference/all_numeric.html">all_numeric</a></span><span class="op">(</span><span class="op">)</span>, <span class="op">-</span><span class="fu">all_outcomes</span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>
   <span class="fu">step_corr</span><span class="op">(</span><span class="fu">all_predictors</span><span class="op">(</span><span class="op">)</span>, threshold <span class="op">=</span> <span class="fl">0.7</span>, method <span class="op">=</span> <span class="st">"spearman"</span><span class="op">)</span> </code></pre></div>
 <p>To view the current set of variables and roles, use the <code><a href="https://rdrr.io/r/base/summary.html">summary()</a></code> function:</p>
-<div class="sourceCode" id="cb95"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">housing_rec</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 8 x 4</span>
-<span class="co">#&gt;   variable            type    role      source  </span>
-<span class="co">#&gt;   &lt;chr&gt;               &lt;chr&gt;   &lt;chr&gt;     &lt;chr&gt;   </span>
-<span class="co">#&gt; 1 longitude           numeric ID        original</span>
-<span class="co">#&gt; 2 latitude            numeric ID        original</span>
-<span class="co">#&gt; 3 median_income       numeric predictor original</span>
-<span class="co">#&gt; 4 ocean_proximity     nominal predictor original</span>
-<span class="co">#&gt; 5 bedrooms_per_room   numeric predictor original</span>
-<span class="co">#&gt; 6 rooms_per_household numeric predictor original</span>
-<span class="co">#&gt; # … with 2 more rows</span></code></pre></div>
+<div class="sourceCode" id="cb135"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">housing_rec</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 8 x 4
+#&gt;   variable            type    role      source  
+#&gt;   &lt;chr&gt;               &lt;chr&gt;   &lt;chr&gt;     &lt;chr&gt;   
+#&gt; 1 longitude           numeric ID        original
+#&gt; 2 latitude            numeric ID        original
+#&gt; 3 median_income       numeric predictor original
+#&gt; 4 ocean_proximity     nominal predictor original
+#&gt; 5 bedrooms_per_room   numeric predictor original
+#&gt; 6 rooms_per_household numeric predictor original
+#&gt; # … with 2 more rows</code></pre>
 <p>If we would like to check if all of our preprocessing steps from above actually worked, we can proceed as follows:</p>
-<div class="sourceCode" id="cb96"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb137"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">prepped_data</span> <span class="op">&lt;-</span> 
   <span class="va">housing_rec</span> <span class="op">%&gt;%</span> <span class="co"># use the recipe object</span>
   <span class="fu">prep</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> <span class="co"># perform the recipe on training data</span>
   <span class="fu">juice</span><span class="op">(</span><span class="op">)</span> <span class="co"># extract only the preprocessed dataframe </span></code></pre></div>
 <p>Take a look at the data structure:</p>
-<div class="sourceCode" id="cb97"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">glimpse</span><span class="op">(</span><span class="va">prepped_data</span><span class="op">)</span>
-<span class="co">#&gt; Rows: 15,317</span>
-<span class="co">#&gt; Columns: 10</span>
-<span class="co">#&gt; $ longitude                  &lt;dbl&gt; -122, -122, -122, -122, -122, -122, -122, …</span>
-<span class="co">#&gt; $ latitude                   &lt;dbl&gt; 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38…</span>
-<span class="co">#&gt; $ median_income              &lt;dbl&gt; 1.85, 1.56, 1.03, 0.32, 0.11, -0.22, -1.08…</span>
-<span class="co">#&gt; $ rooms_per_household        &lt;dbl&gt; 0.6768, 1.7192, 0.4206, -0.3141, -0.1852, …</span>
-<span class="co">#&gt; $ population_per_household   &lt;dbl&gt; -1.073, -0.042, -0.388, -1.022, -1.041, -1…</span>
-<span class="co">#&gt; $ price_category             &lt;fct&gt; above, above, above, above, above, above, …</span>
-<span class="co">#&gt; $ ocean_proximity_INLAND     &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …</span>
-<span class="co">#&gt; $ ocean_proximity_ISLAND     &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …</span>
-<span class="co">#&gt; $ ocean_proximity_NEAR.BAY   &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …</span>
-<span class="co">#&gt; $ ocean_proximity_NEAR.OCEAN &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …</span></code></pre></div>
+<div class="sourceCode" id="cb138"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu">glimpse</span><span class="op">(</span><span class="va">prepped_data</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; Rows: 15,317
+#&gt; Columns: 10
+#&gt; $ longitude                  &lt;dbl&gt; -122, -122, -122, -122, -122, -122, -122, …
+#&gt; $ latitude                   &lt;dbl&gt; 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38…
+#&gt; $ median_income              &lt;dbl&gt; 1.85, 1.56, 1.03, 0.32, 0.11, -0.22, -1.08…
+#&gt; $ rooms_per_household        &lt;dbl&gt; 0.6768, 1.7192, 0.4206, -0.3141, -0.1852, …
+#&gt; $ population_per_household   &lt;dbl&gt; -1.073, -0.042, -0.388, -1.022, -1.041, -1…
+#&gt; $ price_category             &lt;fct&gt; above, above, above, above, above, above, …
+#&gt; $ ocean_proximity_INLAND     &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+#&gt; $ ocean_proximity_ISLAND     &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+#&gt; $ ocean_proximity_NEAR.BAY   &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+#&gt; $ ocean_proximity_NEAR.OCEAN &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …</code></pre>
 <p>Visualize the numerical data:</p>
-<div class="sourceCode" id="cb98"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb140"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">prepped_data</span> <span class="op">%&gt;%</span> 
   <span class="fu">select</span><span class="op">(</span><span class="va">price_category</span>, 
          <span class="va">median_income</span>, 
@@ -214,12 +243,12 @@
 <p>Remember that we already partitioned our data set into a <em>training set</em> and <em>test set</em>. This lets us judge whether a given model will generalize well to new data. However, using only two partitions may be insufficient when doing many rounds of hyperparameter tuning (which we don’t perform in this tutorial but it is always recommended to use a validation set).</p>
 <p>Therefore, it is usually a good idea to create a so called <code>validation set</code>. Watch this short <a href="https://developers.google.com/machine-learning/crash-course/validation/video-lecture">video from Google’s Machine Learning crash course</a> to learn more about the value of a validation set.</p>
 <p>We use k-fold crossvalidation to build a set of 5 validation folds with the function <code>vfold_cv</code>. We also use stratified sampling:</p>
-<div class="sourceCode" id="cb99"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb141"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>
 
 <span class="va">cv_folds</span> <span class="op">&lt;-</span>
  <span class="fu">vfold_cv</span><span class="op">(</span><span class="va">train_data</span>, 
-          v <span class="op">=</span> <span class="fl">5</span>, <span class="co"># number of folds</span>
+          v <span class="op">=</span> <span class="fl">5</span>, 
           strata <span class="op">=</span> <span class="va">price_category</span><span class="op">)</span> </code></pre></div>
 <p>We will come back to the <em>validation set</em> after we specified our models.</p>
 </div>
@@ -251,7 +280,7 @@
 <footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
 
   <div class="col-12 col-md-6 mt-3">
-    <p>"<strong>Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-11.</p>
+    <p>"<strong>Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-16.</p>
   </div>
 
   <div class="col-12 col-md-6 mt-3">

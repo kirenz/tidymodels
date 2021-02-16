@@ -76,22 +76,21 @@
 <h3>
 <span class="header-section-number">6.1.1</span> Lasso regression<a class="anchor" aria-label="anchor" href="#lasso-regression"><i class="fas fa-link"></i></a>
 </h3>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">lasso_spec</span> <span class="op">&lt;-</span> <span class="co"># your model specification</span>
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">lasso_spec</span> <span class="op">&lt;-</span> <span class="co"># your model specification</span>
   <span class="fu">linear_reg</span><span class="op">(</span>penalty <span class="op">=</span> <span class="fl">0.1</span>, mixture <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">%&gt;%</span>  <span class="co"># model type and some options</span>
   <span class="fu">set_engine</span><span class="op">(</span>engine <span class="op">=</span> <span class="st">"glmnet"</span><span class="op">)</span> <span class="op">%&gt;%</span>  <span class="co"># model engine</span>
   <span class="fu">set_mode</span><span class="op">(</span><span class="st">"regression"</span><span class="op">)</span> <span class="co"># model mode</span>
 
 <span class="co"># Show your model specification</span>
-<span class="va">lasso_spec</span>
-<span class="co">#&gt; Linear Regression Model Specification (regression)</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Main Arguments:</span>
-<span class="co">#&gt;   penalty = 0.1</span>
-<span class="co">#&gt;   mixture = 1</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Computational engine: glmnet</span></code></pre></div>
+<span class="va">lasso_spec</span></code></pre></div>
+<pre><code>#&gt; Linear Regression Model Specification (regression)
+#&gt; 
+#&gt; Main Arguments:
+#&gt;   penalty = 0.1
+#&gt;   mixture = 1
+#&gt; 
+#&gt; Computational engine: glmnet</code></pre>
 <ul>
 <li><p><code>penalty</code>: The total amount of regularization in the model. Higher values imply a higher penalty. If you choose a penalty of 0 you fit a standard linear regression model.</p></li>
 <li><p><code>mixture</code>: The mixture amounts of different types of regularization. A number between zero and one (inclusive) that is the proportion of L1 regularization (i.e. lasso) in the model. When mixture = 1, it is a pure lasso model while mixture = 0 indicates that ridge regression is being used (this works only for engines “glmnet” and “spark”).</p></li>
@@ -102,9 +101,8 @@
 <h3>
 <span class="header-section-number">6.1.2</span> Natural spline<a class="anchor" aria-label="anchor" href="#natural-spline"><i class="fas fa-link"></i></a>
 </h3>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">spline_spec</span> <span class="op">&lt;-</span> 
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">spline_spec</span> <span class="op">&lt;-</span> 
   <span class="fu">linear_reg</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>  
   <span class="fu">set_engine</span><span class="op">(</span>engine <span class="op">=</span> <span class="st">"lm"</span><span class="op">)</span> <span class="op">%&gt;%</span>  
   <span class="fu">set_mode</span><span class="op">(</span><span class="st">"regression"</span><span class="op">)</span></code></pre></div>
@@ -114,7 +112,7 @@
 <h3>
 <span class="header-section-number">6.1.3</span> Random forest<a class="anchor" aria-label="anchor" href="#random-forest"><i class="fas fa-link"></i></a>
 </h3>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/imbs-hl/ranger">ranger</a></span><span class="op">)</span>
 
 <span class="va">rf_spec</span> <span class="op">&lt;-</span> 
@@ -126,7 +124,7 @@
 <h3>
 <span class="header-section-number">6.1.4</span> Boosted tree (XGBoost)<a class="anchor" aria-label="anchor" href="#boosted-tree-xgboost"><i class="fas fa-link"></i></a>
 </h3>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/dmlc/xgboost">xgboost</a></span><span class="op">)</span>
 
 <span class="va">xgb_spec</span> <span class="op">&lt;-</span> 
@@ -138,9 +136,8 @@
 <h3>
 <span class="header-section-number">6.1.5</span> K-nearest neighbor<a class="anchor" aria-label="anchor" href="#k-nearest-neighbor"><i class="fas fa-link"></i></a>
 </h3>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">knn_spec</span> <span class="op">&lt;-</span> 
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">knn_spec</span> <span class="op">&lt;-</span> 
   <span class="fu">nearest_neighbor</span><span class="op">(</span>neighbors <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">%&gt;%</span> <span class="co"># we can adjust the number of neighbors </span>
   <span class="fu">set_engine</span><span class="op">(</span><span class="st">"kknn"</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu">set_mode</span><span class="op">(</span><span class="st">"regression"</span><span class="op">)</span> </code></pre></div>
@@ -156,9 +153,8 @@
 <span class="header-section-number">6.2.1</span> Lasso<a class="anchor" aria-label="anchor" href="#lasso"><i class="fas fa-link"></i></a>
 </h3>
 <p>Bundle recipe and model with <code>workflows</code>:</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">lasso_wflow</span> <span class="op">&lt;-</span> <span class="co"># new workflow object</span>
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">lasso_wflow</span> <span class="op">&lt;-</span> <span class="co"># new workflow object</span>
  <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> <span class="co"># use workflow function</span>
  <span class="fu">add_recipe</span><span class="op">(</span><span class="va">housing_rec</span><span class="op">)</span> <span class="op">%&gt;%</span>   <span class="co"># use the new recipe</span>
  <span class="fu">add_model</span><span class="op">(</span><span class="va">lasso_spec</span><span class="op">)</span>   <span class="co"># add your model spec</span></code></pre></div>
@@ -168,7 +164,7 @@
 <span class="header-section-number">6.2.2</span> Natural spline<a class="anchor" aria-label="anchor" href="#natural-spline-1"><i class="fas fa-link"></i></a>
 </h3>
 <p>We need to declare the degrees of freedom -with <code>step_ns()</code>- for our natural spline. In our example, we just add the new step to our <code>housing_rec</code> recipe and create a new recipe which we will only use for ourse natural spline.</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">splines</span><span class="op">)</span>
 
 <span class="va">housing_rec_spline</span> <span class="op">&lt;-</span> 
@@ -176,9 +172,8 @@
   <span class="fu">step_ns</span><span class="op">(</span><span class="fu">all_predictors</span><span class="op">(</span><span class="op">)</span>, deg_free <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="co"># natural spline</span></code></pre></div>
 <p>The higher the degree of freedom, the more complex the resulting model.</p>
 <p>Now we bundle the recipe and our model:</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">spline_wflow</span> <span class="op">&lt;-</span> 
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">spline_wflow</span> <span class="op">&lt;-</span> 
  <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span> 
  <span class="fu">add_recipe</span><span class="op">(</span><span class="va">housing_rec_spline</span><span class="op">)</span> <span class="op">%&gt;%</span>   <span class="co"># use the spline recipe</span>
  <span class="fu">add_model</span><span class="op">(</span><span class="va">spline_spec</span><span class="op">)</span> </code></pre></div>
@@ -188,9 +183,8 @@
 <span class="header-section-number">6.2.3</span> Random forest<a class="anchor" aria-label="anchor" href="#random-forest-1"><i class="fas fa-link"></i></a>
 </h3>
 <p>Bundle recipe and model:</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">rf_wflow</span> <span class="op">&lt;-</span>
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">rf_wflow</span> <span class="op">&lt;-</span>
  <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
  <span class="fu">add_recipe</span><span class="op">(</span><span class="va">housing_rec</span><span class="op">)</span> <span class="op">%&gt;%</span> 
  <span class="fu">add_model</span><span class="op">(</span><span class="va">rf_spec</span><span class="op">)</span> </code></pre></div>
@@ -200,9 +194,8 @@
 <span class="header-section-number">6.2.4</span> XGBoost<a class="anchor" aria-label="anchor" href="#xgboost"><i class="fas fa-link"></i></a>
 </h3>
 <p>Bundle recipe and model:</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">xgb_wflow</span> <span class="op">&lt;-</span>
+<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">xgb_wflow</span> <span class="op">&lt;-</span>
  <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
  <span class="fu">add_recipe</span><span class="op">(</span><span class="va">housing_rec</span><span class="op">)</span> <span class="op">%&gt;%</span> 
  <span class="fu">add_model</span><span class="op">(</span><span class="va">xgb_spec</span><span class="op">)</span></code></pre></div>
@@ -212,9 +205,8 @@
 <span class="header-section-number">6.2.5</span> K-nearest neighbor<a class="anchor" aria-label="anchor" href="#k-nearest-neighbor-1"><i class="fas fa-link"></i></a>
 </h3>
 <p>Bundle recipe and model:</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">knn_wflow</span> <span class="op">&lt;-</span>
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">knn_wflow</span> <span class="op">&lt;-</span>
  <span class="fu">workflow</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span>
  <span class="fu">add_recipe</span><span class="op">(</span><span class="va">housing_rec</span><span class="op">)</span> <span class="op">%&gt;%</span> 
  <span class="fu">add_model</span><span class="op">(</span><span class="va">knn_spec</span><span class="op">)</span></code></pre></div>
@@ -231,9 +223,8 @@
 <h3>
 <span class="header-section-number">6.3.1</span> Lasso regression<a class="anchor" aria-label="anchor" href="#lasso-regression-1"><i class="fas fa-link"></i></a>
 </h3>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>
+<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>
 
 <span class="va">lasso_res</span> <span class="op">&lt;-</span> 
   <span class="va">lasso_wflow</span> <span class="op">%&gt;%</span> <span class="co"># use workflow object</span>
@@ -241,32 +232,29 @@
                 control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># save predictions</span>
     <span class="op">)</span></code></pre></div>
 <p>Show average performance over all folds:</p>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">lasso_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 2 x 6</span>
-<span class="co">#&gt;   .metric .estimator  mean     n std_err .config             </span>
-<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               </span>
-<span class="co">#&gt; 1 rmse    standard   0.357     5 0.00119 Preprocessor1_Model1</span>
-<span class="co">#&gt; 2 rsq     standard   0.608     5 0.00356 Preprocessor1_Model1</span></code></pre></div>
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">lasso_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 2 x 6
+#&gt;   .metric .estimator  mean     n std_err .config             
+#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+#&gt; 1 rmse    standard   0.357     5 0.00119 Preprocessor1_Model1
+#&gt; 2 rsq     standard   0.608     5 0.00356 Preprocessor1_Model1</code></pre>
 <p>Show performance for every single fold:</p>
-<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">lasso_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 10 x 5</span>
-<span class="co">#&gt;   id    .metric .estimator .estimate .config             </span>
-<span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               </span>
-<span class="co">#&gt; 1 Fold1 rmse    standard       0.356 Preprocessor1_Model1</span>
-<span class="co">#&gt; 2 Fold1 rsq     standard       0.599 Preprocessor1_Model1</span>
-<span class="co">#&gt; 3 Fold2 rmse    standard       0.354 Preprocessor1_Model1</span>
-<span class="co">#&gt; 4 Fold2 rsq     standard       0.613 Preprocessor1_Model1</span>
-<span class="co">#&gt; 5 Fold3 rmse    standard       0.361 Preprocessor1_Model1</span>
-<span class="co">#&gt; 6 Fold3 rsq     standard       0.608 Preprocessor1_Model1</span>
-<span class="co">#&gt; # … with 4 more rows</span></code></pre></div>
+<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">lasso_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 10 x 5
+#&gt;   id    .metric .estimator .estimate .config             
+#&gt;   &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+#&gt; 1 Fold1 rmse    standard       0.356 Preprocessor1_Model1
+#&gt; 2 Fold1 rsq     standard       0.599 Preprocessor1_Model1
+#&gt; 3 Fold2 rmse    standard       0.354 Preprocessor1_Model1
+#&gt; 4 Fold2 rsq     standard       0.613 Preprocessor1_Model1
+#&gt; 5 Fold3 rmse    standard       0.361 Preprocessor1_Model1
+#&gt; 6 Fold3 rsq     standard       0.608 Preprocessor1_Model1
+#&gt; # … with 4 more rows</code></pre>
 <p>To assess the model predictions, we plot the predictions on the y-axis and the real median house value at the x-axis. Note that the red line is not our model. If our model would have made no mistakes at all, all points would lie on the red diagonal line (where the prediction equals the real value).</p>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">assess_res</span> <span class="op">&lt;-</span> <span class="fu">collect_predictions</span><span class="op">(</span><span class="va">lasso_res</span><span class="op">)</span>
+<div class="sourceCode" id="cb68"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">assess_res</span> <span class="op">&lt;-</span> <span class="fu">collect_predictions</span><span class="op">(</span><span class="va">lasso_res</span><span class="op">)</span>
 
 <span class="va">assess_res</span> <span class="op">%&gt;%</span> 
   <span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">median_house_value</span>, y <span class="op">=</span> <span class="va">.pred</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
@@ -276,41 +264,39 @@
   <span class="fu">ylab</span><span class="op">(</span><span class="st">"Predicted"</span><span class="op">)</span></code></pre></div>
 <div class="inline-figure"><img src="Tidymodels_files/figure-html/unnamed-chunk-49-1.png" width="100%" height="100%" style="display: block; margin: auto;"></div>
 <p>Let`s look at the 10 districts where our model produced the greatest residuals:</p>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">wrongest_prediction</span> <span class="op">&lt;-</span> 
+<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">wrongest_prediction</span> <span class="op">&lt;-</span> 
   <span class="va">assess_res</span> <span class="op">%&gt;%</span> 
   <span class="fu">mutate</span><span class="op">(</span>residual <span class="op">=</span> <span class="va">median_house_value</span> <span class="op">-</span> <span class="va">.pred</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu">arrange</span><span class="op">(</span><span class="fu">desc</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span><span class="op">(</span><span class="va">residual</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu">slice_head</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>
 
-<span class="va">wrongest_prediction</span>
-<span class="co">#&gt; # A tibble: 10 x 6</span>
-<span class="co">#&gt;   id    .pred  .row median_house_value .config              residual</span>
-<span class="co">#&gt;   &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;              &lt;dbl&gt; &lt;chr&gt;                   &lt;dbl&gt;</span>
-<span class="co">#&gt; 1 Fold1  11.9  6523               9.62 Preprocessor1_Model1    -2.30</span>
-<span class="co">#&gt; 2 Fold3  12.0  4197               9.77 Preprocessor1_Model1    -2.21</span>
-<span class="co">#&gt; 3 Fold3  12.0  1348              10.0  Preprocessor1_Model1    -2.01</span>
-<span class="co">#&gt; 4 Fold5  11.6  2084               9.62 Preprocessor1_Model1    -1.98</span>
-<span class="co">#&gt; 5 Fold5  11.5  1868               9.62 Preprocessor1_Model1    -1.87</span>
-<span class="co">#&gt; 6 Fold1  12.0 12383              10.3  Preprocessor1_Model1    -1.79</span>
-<span class="co">#&gt; # … with 4 more rows</span></code></pre></div>
+<span class="va">wrongest_prediction</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 10 x 6
+#&gt;   id    .pred  .row median_house_value .config              residual
+#&gt;   &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;              &lt;dbl&gt; &lt;chr&gt;                   &lt;dbl&gt;
+#&gt; 1 Fold1  11.9  6523               9.62 Preprocessor1_Model1    -2.30
+#&gt; 2 Fold3  12.0  4197               9.77 Preprocessor1_Model1    -2.21
+#&gt; 3 Fold3  12.0  1348              10.0  Preprocessor1_Model1    -2.01
+#&gt; 4 Fold5  11.6  2084               9.62 Preprocessor1_Model1    -1.98
+#&gt; 5 Fold5  11.5  1868               9.62 Preprocessor1_Model1    -1.87
+#&gt; 6 Fold1  12.0 12383              10.3  Preprocessor1_Model1    -1.79
+#&gt; # … with 4 more rows</code></pre>
 <p>Show the observations in the training data.</p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">train_data</span> <span class="op">%&gt;%</span> 
-  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html">slice</a></span><span class="op">(</span><span class="va">wrongest_prediction</span><span class="op">$</span><span class="va">.row</span><span class="op">)</span> 
-<span class="co">#&gt; # A tibble: 10 x 8</span>
-<span class="co">#&gt;   longitude latitude median_house_va… median_income ocean_proximity</span>
-<span class="co">#&gt;       &lt;dbl&gt;    &lt;dbl&gt;            &lt;dbl&gt;         &lt;dbl&gt; &lt;fct&gt;          </span>
-<span class="co">#&gt; 1     -118.     34.2            14999          4.19 INLAND         </span>
-<span class="co">#&gt; 2     -118.     34.2            17500          2.37 &lt;1H OCEAN      </span>
-<span class="co">#&gt; 3     -122.     37.9            22500          2.68 NEAR BAY       </span>
-<span class="co">#&gt; 4     -117.     36.4            14999          2.1  INLAND         </span>
-<span class="co">#&gt; 5     -123.     39.7            14999          1.66 INLAND         </span>
-<span class="co">#&gt; 6     -121.     34.7            28300          2.74 NEAR OCEAN     </span>
-<span class="co">#&gt; # … with 4 more rows, and 3 more variables: bedrooms_per_room &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   rooms_per_household &lt;dbl&gt;, population_per_household &lt;dbl&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb71"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">train_data</span> <span class="op">%&gt;%</span> 
+  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html">slice</a></span><span class="op">(</span><span class="va">wrongest_prediction</span><span class="op">$</span><span class="va">.row</span><span class="op">)</span> </code></pre></div>
+<pre><code>#&gt; # A tibble: 10 x 8
+#&gt;   longitude latitude median_house_va… median_income ocean_proximity
+#&gt;       &lt;dbl&gt;    &lt;dbl&gt;            &lt;dbl&gt;         &lt;dbl&gt; &lt;fct&gt;          
+#&gt; 1     -118.     34.2            14999          4.19 INLAND         
+#&gt; 2     -118.     34.2            17500          2.37 &lt;1H OCEAN      
+#&gt; 3     -122.     37.9            22500          2.68 NEAR BAY       
+#&gt; 4     -117.     36.4            14999          2.1  INLAND         
+#&gt; 5     -123.     39.7            14999          1.66 INLAND         
+#&gt; 6     -121.     34.7            28300          2.74 NEAR OCEAN     
+#&gt; # … with 4 more rows, and 3 more variables: bedrooms_per_room &lt;dbl&gt;,
+#&gt; #   rooms_per_household &lt;dbl&gt;, population_per_household &lt;dbl&gt;</code></pre>
 <p>In this tutorial, we don’t further investigate the reasons for the wrong predictions. In reality, we would check wether some of the districts are outliers in comparision to the rest of our data and we would need to decide if we should drop some of the cases from the data (if there are good reasons to do so).</p>
 </div>
 <div id="natural-spline-2" class="section level3" number="6.3.2">
@@ -318,93 +304,88 @@
 <span class="header-section-number">6.3.2</span> Natural spline<a class="anchor" aria-label="anchor" href="#natural-spline-2"><i class="fas fa-link"></i></a>
 </h3>
 <p>We don’t repeat all of the steps shown in lasso regression and just focus on the performance metrics.</p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">spline_res</span> <span class="op">&lt;-</span>
+<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">spline_res</span> <span class="op">&lt;-</span>
   <span class="va">spline_wflow</span> <span class="op">%&gt;%</span> 
   <span class="fu">fit_resamples</span><span class="op">(</span>
     resamples <span class="op">=</span> <span class="va">cv_folds</span>,
     control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
     <span class="op">)</span>
 
-<span class="va">spline_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 2 x 6</span>
-<span class="co">#&gt;   .metric .estimator  mean     n std_err .config             </span>
-<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               </span>
-<span class="co">#&gt; 1 rmse    standard   0.308     4 0.00101 Preprocessor1_Model1</span>
-<span class="co">#&gt; 2 rsq     standard   0.665     4 0.00199 Preprocessor1_Model1</span></code></pre></div>
+<span class="va">spline_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 2 x 6
+#&gt;   .metric .estimator  mean     n std_err .config             
+#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+#&gt; 1 rmse    standard   0.308     4 0.00101 Preprocessor1_Model1
+#&gt; 2 rsq     standard   0.665     4 0.00199 Preprocessor1_Model1</code></pre>
 </div>
 <div id="random-forest-2" class="section level3" number="6.3.3">
 <h3>
 <span class="header-section-number">6.3.3</span> Random forest<a class="anchor" aria-label="anchor" href="#random-forest-2"><i class="fas fa-link"></i></a>
 </h3>
 <p>We don’t repeat all of the steps shown in lasso regression and just focus on the performance metrics.</p>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">rf_res</span> <span class="op">&lt;-</span>
+<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">rf_res</span> <span class="op">&lt;-</span>
   <span class="va">rf_wflow</span> <span class="op">%&gt;%</span> 
   <span class="fu">fit_resamples</span><span class="op">(</span>
     resamples <span class="op">=</span> <span class="va">cv_folds</span>,
     control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
     <span class="op">)</span>
 
-<span class="va">rf_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 2 x 6</span>
-<span class="co">#&gt;   .metric .estimator  mean     n std_err .config             </span>
-<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               </span>
-<span class="co">#&gt; 1 rmse    standard   0.309     5 0.00135 Preprocessor1_Model1</span>
-<span class="co">#&gt; 2 rsq     standard   0.673     5 0.00144 Preprocessor1_Model1</span></code></pre></div>
+<span class="va">rf_res</span> <span class="op">%&gt;%</span>  <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 2 x 6
+#&gt;   .metric .estimator  mean     n std_err .config             
+#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+#&gt; 1 rmse    standard   0.309     5 0.00135 Preprocessor1_Model1
+#&gt; 2 rsq     standard   0.673     5 0.00144 Preprocessor1_Model1</code></pre>
 </div>
 <div id="xgboost-1" class="section level3" number="6.3.4">
 <h3>
 <span class="header-section-number">6.3.4</span> XGBoost<a class="anchor" aria-label="anchor" href="#xgboost-1"><i class="fas fa-link"></i></a>
 </h3>
 <p>We don’t repeat all of the steps shown in lasso regression and just focus on the performance metrics.</p>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">xgb_res</span> <span class="op">&lt;-</span> 
+<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">xgb_res</span> <span class="op">&lt;-</span> 
   <span class="va">xgb_wflow</span> <span class="op">%&gt;%</span> 
   <span class="fu">fit_resamples</span><span class="op">(</span>
     resamples <span class="op">=</span> <span class="va">cv_folds</span>,
     control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
     <span class="op">)</span> 
 
-<span class="va">xgb_res</span> <span class="op">%&gt;%</span> <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 2 x 6</span>
-<span class="co">#&gt;   .metric .estimator  mean     n std_err .config             </span>
-<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               </span>
-<span class="co">#&gt; 1 rmse    standard   0.304     5 0.00158 Preprocessor1_Model1</span>
-<span class="co">#&gt; 2 rsq     standard   0.685     5 0.00102 Preprocessor1_Model1</span></code></pre></div>
+<span class="va">xgb_res</span> <span class="op">%&gt;%</span> <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 2 x 6
+#&gt;   .metric .estimator  mean     n std_err .config             
+#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+#&gt; 1 rmse    standard   0.304     5 0.00158 Preprocessor1_Model1
+#&gt; 2 rsq     standard   0.685     5 0.00102 Preprocessor1_Model1</code></pre>
 </div>
 <div id="k-nearest-neighbor-2" class="section level3" number="6.3.5">
 <h3>
 <span class="header-section-number">6.3.5</span> K-nearest neighbor<a class="anchor" aria-label="anchor" href="#k-nearest-neighbor-2"><i class="fas fa-link"></i></a>
 </h3>
 <p>We don’t repeat all of the steps shown in lasso regression and just focus on the performance metrics.</p>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">knn_res</span> <span class="op">&lt;-</span> 
+<div class="sourceCode" id="cb79"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">knn_res</span> <span class="op">&lt;-</span> 
   <span class="va">knn_wflow</span> <span class="op">%&gt;%</span> 
   <span class="fu">fit_resamples</span><span class="op">(</span>
     resamples <span class="op">=</span> <span class="va">cv_folds</span>,
     control <span class="op">=</span> <span class="fu">control_resamples</span><span class="op">(</span>save_pred <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
     <span class="op">)</span> 
 
-<span class="va">knn_res</span> <span class="op">%&gt;%</span> <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 2 x 6</span>
-<span class="co">#&gt;   .metric .estimator  mean     n std_err .config             </span>
-<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               </span>
-<span class="co">#&gt; 1 rmse    standard   0.338     5 0.00136 Preprocessor1_Model1</span>
-<span class="co">#&gt; 2 rsq     standard   0.611     5 0.00184 Preprocessor1_Model1</span></code></pre></div>
+<span class="va">knn_res</span> <span class="op">%&gt;%</span> <span class="fu">collect_metrics</span><span class="op">(</span>summarize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 2 x 6
+#&gt;   .metric .estimator  mean     n std_err .config             
+#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+#&gt; 1 rmse    standard   0.338     5 0.00136 Preprocessor1_Model1
+#&gt; 2 rsq     standard   0.611     5 0.00184 Preprocessor1_Model1</code></pre>
 </div>
 <div id="compare-models" class="section level3" number="6.3.6">
 <h3>
 <span class="header-section-number">6.3.6</span> Compare models<a class="anchor" aria-label="anchor" href="#compare-models"><i class="fas fa-link"></i></a>
 </h3>
 <p>Extract the RMSE from our models to compare them:</p>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">lasso_rmse</span> <span class="op">&lt;-</span> 
+<div class="sourceCode" id="cb81"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">lasso_rmse</span> <span class="op">&lt;-</span> 
   <span class="va">lasso_res</span> <span class="op">%&gt;%</span> 
   <span class="fu">collect_metrics</span><span class="op">(</span>summarise <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">%&gt;%</span>
   <span class="fu">mutate</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"lasso"</span><span class="op">)</span>
@@ -456,18 +437,17 @@
   <span class="fu">mutate</span><span class="op">(</span>model <span class="op">=</span> <span class="fu">fct_reorder</span><span class="op">(</span><span class="va">model</span>, <span class="fu">desc</span><span class="op">(</span><span class="va">mean_rsq</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>
   <span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">model</span>, <span class="va">mean_rsq</span>, fill<span class="op">=</span><span class="va">model</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">geom_col</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">scale_fill_brewer</span><span class="op">(</span>palette <span class="op">=</span> <span class="st">"Blues"</span><span class="op">)</span>
-  </code></pre></div>
+  <span class="fu">scale_fill_brewer</span><span class="op">(</span>palette <span class="op">=</span> <span class="st">"Blues"</span><span class="op">)</span></code></pre></div>
 <p><img src="Tidymodels_files/figure-html/unnamed-chunk-56-1.png" width="100%" height="100%" style="display: block; margin: auto;"><img src="Tidymodels_files/figure-html/unnamed-chunk-56-2.png" width="100%" height="100%" style="display: block; margin: auto;"></p>
 <p>Note that the model results are quite similar.</p>
-<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb82"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># find minimum rmse</span>
 <span class="va">model_comp</span> <span class="op">%&gt;%</span> 
-  <span class="fu">slice_min</span><span class="op">(</span><span class="va">mean_rmse</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 1 x 5</span>
-<span class="co">#&gt;   model   mean_rmse mean_rsq std_err_rmse std_err_rsq</span>
-<span class="co">#&gt;   &lt;chr&gt;       &lt;dbl&gt;    &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt;</span>
-<span class="co">#&gt; 1 XGBoost     0.304    0.685      0.00158     0.00102</span></code></pre></div>
+  <span class="fu">slice_min</span><span class="op">(</span><span class="va">mean_rmse</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 1 x 5
+#&gt;   model   mean_rmse mean_rsq std_err_rmse std_err_rsq
+#&gt;   &lt;chr&gt;       &lt;dbl&gt;    &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt;
+#&gt; 1 XGBoost     0.304    0.685      0.00158     0.00102</code></pre>
 <p>Now it’s time to fit the best model (in our case the XGBoost model) one last time to the full <em>training set</em> and evaluate the resulting final model on the <em>test set</em>.</p>
 </div>
 </div>
@@ -476,18 +456,17 @@
 <span class="header-section-number">6.4</span> Last fit and evaluation on test set<a class="anchor" aria-label="anchor" href="#last-fit-and-evaluation-on-test-set"><i class="fas fa-link"></i></a>
 </h2>
 <p>Tidymodels provides the function <a href="https://tune.tidymodels.org/reference/last_fit.html"><code>last_fit()</code></a> which fits a model to the <em>training data</em> and evaluates it on the <em>test set</em>. We just need to provide the workflow object of the best model as well as the <strong>data split</strong> object (not the training data).</p>
-<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="va">last_fit_xgb</span> <span class="op">&lt;-</span> <span class="fu">last_fit</span><span class="op">(</span><span class="va">xgb_wflow</span>, split <span class="op">=</span> <span class="va">data_split</span><span class="op">)</span>
+<div class="sourceCode" id="cb84"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">last_fit_xgb</span> <span class="op">&lt;-</span> <span class="fu">last_fit</span><span class="op">(</span><span class="va">xgb_wflow</span>, split <span class="op">=</span> <span class="va">data_split</span><span class="op">)</span>
 
 <span class="co"># Show RMSE and RSQ</span>
 <span class="va">last_fit_xgb</span> <span class="op">%&gt;%</span> 
-  <span class="fu">collect_metrics</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; # A tibble: 2 x 4</span>
-<span class="co">#&gt;   .metric .estimator .estimate .config             </span>
-<span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               </span>
-<span class="co">#&gt; 1 rmse    standard       0.305 Preprocessor1_Model1</span>
-<span class="co">#&gt; 2 rsq     standard       0.682 Preprocessor1_Model1</span></code></pre></div>
+  <span class="fu">collect_metrics</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 2 x 4
+#&gt;   .metric .estimator .estimate .config             
+#&gt;   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+#&gt; 1 rmse    standard       0.305 Preprocessor1_Model1
+#&gt; 2 rsq     standard       0.682 Preprocessor1_Model1</code></pre>
 <p>And this is our final result. Remember that if a model fit to the training dataset also fits the test dataset well, minimal <em>overfitting</em> has taken place. This seems to be also the case in our example.</p>
 
 </div>
@@ -548,7 +527,7 @@
 <footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
 
   <div class="col-12 col-md-6 mt-3">
-    <p>"<strong>Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-11.</p>
+    <p>"<strong>Regression and Classification with Tidymodels</strong>" was written by Jan Kirenz. It was last built on 2021-02-16.</p>
   </div>
 
   <div class="col-12 col-md-6 mt-3">
